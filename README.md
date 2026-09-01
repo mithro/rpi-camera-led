@@ -15,6 +15,15 @@ Online](https://www.hqonline.com/)'s 600k+ in-stock inventory):
 * [Cheap (< $0.50) MCUs with I2C and no external parts required](research/cheap-mcus.md)
 * [RPi camera compatible FPC connectors (1.0 mm pitch, 15 pin)](research/fpc-connectors.md)
 
+## Hardware
+
+[KiCad schematic](hardware/rpi-camera-led.kicad_sch) ([PDF](hardware/rpi-camera-led.pdf))
+for the interposer: two 15-pin FFC connectors passing the camera signals
+straight through, with a CH32V003J4M6 providing I2C-controlled camera GPIO,
+PWM illumination LEDs and an ambient light sensor. Regenerate with
+`uv run hardware/tools/gen_schematic.py` and verify (ERC + netlist vs design
+intent) with `uv run hardware/tools/check_schematic.py`.
+
 ## License
 
 Apache 2.0
