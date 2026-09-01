@@ -54,7 +54,8 @@ def jlc_search(keyword, page_size=10):
     )
     r.raise_for_status()
     out = []
-    for c in r.json()["data"]["componentPageInfo"]["list"]:
+    page = r.json()["data"]["componentPageInfo"] or {}
+    for c in page.get("list") or []:
         out.append(
             {
                 "service": "jlcpcb",
