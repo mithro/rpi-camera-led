@@ -2523,7 +2523,7 @@
 		)
 		(uuid "6313a208-6745-45c8-b92e-ff7d2195625c")
 	)
-	(text "R6/R7 (0R, DNP) are a bypass: fit them to wire the Pi's CAM_IO pins\nstraight to the camera, e.g. when U1 is unpopulated. Left off, U1 sits in\nthe middle -- it watches the Pi on PD6/PD7 and drives the camera on PA1/PA2.\nDo not fit them while U1 drives: 0R gives contention no current limit."
+	(text "R6/R7 (0R, DNP) are a bypass: fit them to wire the Pi's CAM_IO pins\nstraight to the camera, e.g. when U1 is unpopulated. Left off, U1 sits in\nthe middle -- it watches the Pi on PD5/PD6 and drives the camera on PA1/PA2.\nDo not fit them while U1 drives: 0R gives contention no current limit."
 		(exclude_from_sim no)
 		(at 16.256 120.65 0)
 		(effects
@@ -2545,7 +2545,7 @@
 		)
 		(uuid "9b2cadfa-bc85-44f7-84ef-92d4a59d891b")
 	)
-	(text "SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\nand PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\nPC6, PC7, PD4, PD5, PD7/NRST, PA1 and PC0 are spare."
+	(text "SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\nand PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\nPC6, PC7, PD4 and PC0 are spare. PD7 is left unused on purpose: it is NRST\nuntil the RST_MODE option byte says otherwise, so a Pi GPIO on it would\nreset the MCU on a factory-fresh part."
 		(exclude_from_sim no)
 		(at 95 193 0)
 		(effects
@@ -2651,10 +2651,6 @@
 	(no_connect
 		(at 139.7 62.23)
 		(uuid "31c39ff9-89bf-4d93-898f-64f621b5490b")
-	)
-	(no_connect
-		(at 160.02 54.61)
-		(uuid "3fd34a0a-5536-4258-a492-a31f7ed50feb")
 	)
 	(no_connect
 		(at 160.02 52.07)
@@ -2879,16 +2875,6 @@
 			(type default)
 		)
 		(uuid "43f4ad97-78cd-4c75-9e5b-e6168b8c644f")
-	)
-	(wire
-		(pts
-			(xy 160.02 59.69) (xy 163.83 59.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "47e00823-1a67-40fe-bde7-781d1412c514")
 	)
 	(wire
 		(pts
@@ -3713,28 +3699,6 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "PI_IO0"
-		(shape bidirectional)
-		(at 163.83 59.69 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "15f5487a-3111-4416-b905-ae111079eba0")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 173.9137 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
 				(hide yes)
 			)
 		)
@@ -6556,4 +6520,40 @@
 		)
 	)
 	(embedded_fonts no)
+	(wire
+		(pts
+			(xy 160.02 54.61) (xy 163.83 54.61)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b67a13d4-b974-4233-be15-864913b008f2")
+	)
+	(global_label "PI_IO1"
+		(shape bidirectional)
+		(at 163.83 54.61 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a1ae9554-7377-46f3-bada-93dd6ec6a374")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 173.9137 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(no_connect
+		(at 160.02 59.69)
+		(uuid "cd0735c6-f9a4-4a53-afb8-beedc4954682")
+	)
 )

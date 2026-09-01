@@ -35,9 +35,11 @@ EXPECTED = {
     "CAM_D1_P": {("J1", "6"), ("J2", "6")},
     "CAM_CK_N": {("J1", "8"), ("J2", "8")},
     "CAM_CK_P": {("J1", "9"), ("J2", "9")},
-    "PI_IO0": {("J1", "11"), ("R6", "1")},
-    "PI_IO1": {("J1", "12"), ("R7", "1")},
-    "CAM_IO0": {("J2", "11"), ("U1", "10"), ("R6", "2")},
+    # U1 straddles each GPIO channel rather than sharing a pin with the link:
+    # PD5/PD6 watch the Pi side, PA1/PA2 drive the camera side.
+    "PI_IO0": {("J1", "11"), ("R6", "1"), ("U1", "10")},
+    "PI_IO1": {("J1", "12"), ("R7", "1"), ("U1", "9")},
+    "CAM_IO0": {("J2", "11"), ("U1", "12"), ("R6", "2")},
     "CAM_IO1": {("J2", "12"), ("U1", "13"), ("R7", "2")},
     # SOP-16 frees the LED from the debug pin: PD1 is now programming only,
     # and PC3 (TIM1 CH3) drives the gate resistor.
@@ -51,8 +53,10 @@ EXPECTED = {
 }
 
 # SOP-16 pins with nothing on them (no_connect in the schematic): PC6, PC7,
-# PD4, PD5, PD7/NRST, PA1, PC0.
-UNUSED_U1_PINS = {"5", "6", "8", "9", "11", "12", "16"}
+# PD4, PD7 and PC0.  PD7 is deliberately left alone: it is the NRST pin until
+# the RST_MODE option byte in flash says otherwise, so wiring a Pi GPIO to it
+# would let the Pi reset the MCU on a factory-fresh part.
+UNUSED_U1_PINS = {"5", "6", "8", "11", "16"}
 
 
 def run(*args):
