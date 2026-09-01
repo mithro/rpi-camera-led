@@ -317,7 +317,14 @@ static void handle_cmd(uint8_t cmd)
 		break;
 	}
 	case BL_CMD_VERIFY_APP: {
-		bl_status |= verify_app() ? BL_STATUS_OK : BL_STATUS_ERR;
+		/* Sequence the call before the read-modify-write: verify_app()
+		 * updates bl_status (APP_VALID) itself, and in
+		 * `bl_status |= verify_app() ? ...` the order in which the
+		 * two operands are evaluated is unspecified, so a compiler
+		 * is free to load bl_status first and write back a value
+		 * that discards the APP_VALID update. */
+		bool ok = verify_app();
+		bl_status |= ok ? BL_STATUS_OK : BL_STATUS_ERR;
 		break;
 	}
 	case BL_CMD_RUN_APP: {
