@@ -213,11 +213,11 @@ place("Device:R", "R1", "4.7k", 160, 95, {"1": "3V3", "2": "SDA"},
 place("Device:R", "R2", "4.7k", 172, 95, {"1": "3V3", "2": "SCL"},
       footprint="Resistor_SMD:R_0402_1005Metric")
 
-# --- GPIO pass-through jumpers (fit when U1 is not populated) --------------
-place("Device:R", "R6", "0R (DNP)", 152, 130, {"1": "PI_IO0", "2": "CAM_IO0"},
-      footprint="Resistor_SMD:R_0402_1005Metric", dnp=True)
-place("Device:R", "R7", "0R (DNP)", 164, 130, {"1": "PI_IO1", "2": "CAM_IO1"},
-      footprint="Resistor_SMD:R_0402_1005Metric", dnp=True)
+# --- GPIO couplers: pass-through, Pi-state sensing, and CH32 override -------
+place("Device:R", "R6", "10k", 152, 130, {"1": "PI_IO0", "2": "CAM_IO0"},
+      footprint="Resistor_SMD:R_0402_1005Metric")
+place("Device:R", "R7", "10k", 164, 130, {"1": "PI_IO1", "2": "CAM_IO1"},
+      footprint="Resistor_SMD:R_0402_1005Metric")
 
 # --- Illumination LEDs ------------------------------------------------------
 place("Device:R", "R3", "10R", 200, 95, {"1": "3V3", "2": "LED1_A"},
@@ -263,8 +263,9 @@ text("RPi Camera LED interposer: sits between a Raspberry Pi and its camera.\n"
      "U1 (I2C slave on the camera bus) drives the camera GPIO pins 11/12,\n"
      "PWM-drives the illumination LEDs and reads ambient light on its ADC.",
      20, 30, 2.0)
-text("Fit R6/R7 (0R) to pass the Pi's own CAM_IO pins through\n"
-     "when U1 is not populated. I2C and the Qwiic header work regardless.",
+text("R6/R7 couple the Pi's CAM_IO pins to the camera pins/U1: with U1\n"
+     "high-Z (or unpopulated) the Pi's state passes through and U1 can read\n"
+     "it; when U1 drives, it overrides the Pi through the 10k.",
      108, 164)
 text("Pin 8 = PD1/SWIO (bonded with PD4/PD5): programming and LED gate share\n"
      "it; LEDs flicker while flashing firmware. PD1/T1CH3N gives hardware PWM.",
