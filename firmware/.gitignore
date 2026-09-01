@@ -1,0 +1,7 @@
+*.elf
+*.bin
+*.hex
+*.lst
+*.map
+*.stamp
+generated_*.ld

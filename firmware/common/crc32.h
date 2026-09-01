@@ -19,9 +19,20 @@
 #include <stdint.h>
 #include <stddef.h>
 
-static inline uint32_t crc32_compute(const uint8_t *data, uint32_t len)
+/*
+ * Chainable, zlib-compatible CRC32 update: crc32_update(0, data, len)
+ * equals Python's zlib.crc32(data), and crc32_update(prev, data2, len2)
+ * (where prev is the return value of an earlier crc32_update() call)
+ * equals zlib.crc32(data2, prev) -- i.e. the same value as running the
+ * whole concatenated buffer through zlib.crc32() in one call. This
+ * lets the bootloader verify an app image's CRC32 while treating the
+ * 4-byte crc32 field inside it as zero, without needing a RAM copy of
+ * the whole image: update() over the bytes before the field, then
+ * over 4 zero bytes, then over the bytes after the field.
+ */
+static inline uint32_t crc32_update(uint32_t crc, const uint8_t *data, uint32_t len)
 {
-    uint32_t crc = 0xFFFFFFFFu;
+    crc ^= 0xFFFFFFFFu;
     for (uint32_t i = 0; i < len; i++) {
         crc ^= data[i];
         for (int b = 0; b < 8; b++) {
@@ -30,6 +41,11 @@ static inline uint32_t crc32_compute(const uint8_t *data, uint32_t len)
         }
     }
     return crc ^ 0xFFFFFFFFu;
+}
+
+static inline uint32_t crc32_compute(const uint8_t *data, uint32_t len)
+{
+    return crc32_update(0, data, len);
 }
 
 /* CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF, no reflection, no
