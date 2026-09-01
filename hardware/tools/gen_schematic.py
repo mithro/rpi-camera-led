@@ -31,7 +31,7 @@ SYMBOLS = {  # lib_id -> (library file, symbol name)
     "Connector_Generic:Conn_01x15": ("Connector_Generic.kicad_sym", "Conn_01x15"),
     "Connector_Generic:Conn_01x04": ("Connector_Generic.kicad_sym", "Conn_01x04"),
     "Connector_Generic:Conn_01x03": ("Connector_Generic.kicad_sym", "Conn_01x03"),
-    "MCU_WCH_RiscV:CH32V003JxMx": ("MCU_WCH_RiscV.kicad_sym", "CH32V003JxMx"),
+    "MCU_WCH_RiscV:CH32V003AxMx": ("MCU_WCH_RiscV.kicad_sym", "CH32V003AxMx"),
     "power:PWR_FLAG": ("power.kicad_sym", "PWR_FLAG"),
 }
 
@@ -191,14 +191,20 @@ place(
 )
 
 # --- MCU --------------------------------------------------------------------
+# Pin numbers per the WCH CH32V003 datasheet V1.8 table 2-1 (SOP16 column).
+# Unlike the SOP-8 part no pin bonds two ports, so PD1 carries SWIO alone and
+# PC3 (TIM1 CH3, a true output rather than the complementary CH3N) drives the
+# LED gate.  Spare pins take explicit no-connects so ERC stays clean.
 place(
-    "MCU_WCH_RiscV:CH32V003JxMx", "U1", "CH32V003J4M6",
+    "MCU_WCH_RiscV:CH32V003AxMx", "U1", "CH32V003A4M6",
     150, 60,
-    {"1": "CAM_IO0", "2": "GND", "3": "CAM_IO1", "4": "3V3",
-     "5": "SDA", "6": "SCL", "7": "LIGHT_SENSE", "8": "SWIO"},
-    ref_at=(-4, -11), value_at=(-14, 15),
-    footprint="Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-    extra_props=[("MPN", "WCH CH32V003J4M6 (LCSC C5346354)")],
+    {"1": "SDA", "2": "SCL", "3": "LED_PWM", "4": "LIGHT_SENSE",
+     "5": None, "6": None, "7": "SWIO", "8": None, "9": None,
+     "10": "CAM_IO0", "11": None, "12": None, "13": "CAM_IO1",
+     "14": "GND", "15": "3V3", "16": None},
+    ref_at=(-4, -16), value_at=(-14, 20),
+    footprint="Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
+    extra_props=[("MPN", "WCH CH32V003A4M6 (LCSC C5346357)")],
 )
 
 # --- Decoupling -------------------------------------------------------------
@@ -236,7 +242,7 @@ place("Transistor_FET:Q_NMOS_GSD", "Q1", "AO3400A", 207, 140,
       {"1": "LED_GATE", "2": "GND", "3": "LED_SW"},
       ref_at=(7, -4), value_at=(7, 2),
       footprint="Package_TO_SOT_SMD:SOT-23")
-place("Device:R", "R5", "100R", 178, 138, {"1": "SWIO", "2": "LED_GATE"},
+place("Device:R", "R5", "100R", 178, 138, {"1": "LED_PWM", "2": "LED_GATE"},
       footprint="Resistor_SMD:R_0402_1005Metric")
 place("Device:R", "R8", "10k", 168, 166, {"1": "LED_GATE", "2": "GND"},
       footprint="Resistor_SMD:R_0402_1005Metric")
@@ -267,8 +273,9 @@ text("R6/R7 couple the Pi's CAM_IO pins to the camera pins/U1: with U1\n"
      "high-Z (or unpopulated) the Pi's state passes through and U1 can read\n"
      "it; when U1 drives, it overrides the Pi through the 10k.",
      108, 164)
-text("Pin 8 = PD1/SWIO (bonded with PD4/PD5): programming and LED gate share\n"
-     "it; LEDs flicker while flashing firmware. PD1/T1CH3N gives hardware PWM.",
+text("SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\n"
+     "and PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\n"
+     "PC6, PC7, PD4, PD5, PD7/NRST, PA1 and PC0 are spare.",
      95, 193)
 text("LED current is set by R3/R4 against the 3V3 rail (about 30-40mA each\n"
      "with Vf=2.9V). Total draw comes from the Pi camera 3V3 supply - keep\n"
@@ -288,7 +295,7 @@ sheet = (
     '    (title "RPi Camera LED interposer")\n'
     '    (date "2026-09-01")\n'
     '    (rev "A")\n'
-    '    (comment 1 "CH32V003J4M6 camera GPIO / illumination / light sensor")\n'
+    '    (comment 1 "CH32V003A4M6 camera GPIO / illumination / light sensor")\n'
     "  )\n"
     "  (lib_symbols\n"
     + "\n".join(LIB_BLOCKS.values())
