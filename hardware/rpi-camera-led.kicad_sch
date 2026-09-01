@@ -5800,7 +5800,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm (to camera)"
+		(property "Value" "FFC 15P 1.0mm top contact (to camera)"
 			(at 77.978 82.55 90)
 			(effects
 				(font
@@ -5808,7 +5808,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
+		(property "Footprint" "rpi-camera-led:JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -5835,7 +5835,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
+		(property "MPN" "JUSHUO AFA07-S15ECA-00 (top contact, LCSC C262742)"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -5982,7 +5982,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm (to Raspberry Pi)"
+		(property "Value" "FFC 15P 1.0mm bottom contact (to Raspberry Pi)"
 			(at 20.066 82.55 90)
 			(effects
 				(font
@@ -6017,7 +6017,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
+		(property "MPN" "JUSHUO AFA07-S15FCA-00 (bottom contact, LCSC C262721)"
 			(at 22.86 82.55 0)
 			(effects
 				(font
@@ -6555,5 +6555,16 @@
 	(no_connect
 		(at 160.02 59.69)
 		(uuid "cd0735c6-f9a4-4a53-afb8-beedc4954682")
+	)
+	(text "J1 and J2 are deliberately different parts: J1 bottom contact, J2 top contact.\nTop contact mirrors J2's cable-to-pad order, which cancels the 180 deg rotation\nbetween two connectors whose cables leave opposite edges -- so every J1->J2 net\nruns straight across on one layer instead of crossing the whole bus.\nCost: the camera-side cable goes in contacts up, i.e. flipped from the Pi side.\nUse an opposite-side (type D) FFC there, or fold a standard same-side one."
+		(exclude_from_sim no)
+		(at 181.61 149.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9bef9f8c-a15b-4fe1-b20e-8a6d92625718")
 	)
 )
