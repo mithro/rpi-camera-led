@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Cheap MCUs (&lt; $0.50) with I2C and no external parts required</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #F7F5F1;
+  --surface: #FFFFFF;
+  --ink: #20262A;
+  --muted: #66707A;
+  --accent: #A85B28;
+  --accent-ink: #8C4A1F;
+  --line: #E2DDD4;
+  --row: #FAF8F4;
+  --warn: #8A5A00;
+  --code-bg: #F0EDE7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #181B1E;
+    --surface: #20242A;
+    --ink: #E9E6E0;
+    --muted: #9AA3AB;
+    --accent: #D68F52;
+    --accent-ink: #E0A06E;
+    --line: #333941;
+    --row: #24282F;
+    --warn: #E0B25E;
+    --code-bg: #272C33;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #181B1E;
+  --surface: #20242A;
+  --ink: #E9E6E0;
+  --muted: #9AA3AB;
+  --accent: #D68F52;
+  --accent-ink: #E0A06E;
+  --line: #333941;
+  --row: #24282F;
+  --warn: #E0B25E;
+  --code-bg: #272C33;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+header.site {
+  border-bottom: 2px solid var(--accent);
+  background: var(--surface);
+}
+header.site .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 24px 14px;
+}
+header.site .kicker {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+header.site .kicker a { color: inherit; text-decoration: none; }
+header.site .kicker a:hover { text-decoration: underline; }
+nav.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin-top: 8px;
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+nav.pages a { color: var(--muted); text-decoration: none; padding: 2px 0; }
+nav.pages a:hover { color: var(--accent); }
+nav.pages a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+}
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 24px 64px;
+}
+main > * { max-width: 72ch; }
+main > .table-wrap, main > hr { max-width: none; }
+h1, h2, h3 {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+h1 { font-size: 30px; font-weight: 700; margin: 28px 0 10px; }
+h2 {
+  font-size: 21px;
+  font-weight: 600;
+  margin: 40px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+h3 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+strong { font-weight: 600; }
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+ul { padding-left: 22px; }
+li { margin: 4px 0; }
+.table-wrap { overflow-x: auto; margin: 18px 0; }
+table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  min-width: 640px;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 14px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+tbody tr:nth-child(even) td { background: var(--row); }
+td:first-child, td:first-child a {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+td strong { color: var(--warn); }
+footer.site {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 24px 40px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  a { transition: color 120ms ease; }
+}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="inner">
+    <div class="kicker"><a href="../index.html">RPi Camera LED — part availability research</a></div>
+    <nav class="pages">
+      <a href="../index.html">Overview</a>
+      <a href="../research/i2c-rgb-leds.html">I2C RGB LEDs</a>
+      <a href="../research/i2c-gpio-expanders.html">GPIO expanders</a>
+      <a href="../research/cheap-mcus.html" aria-current="page">Cheap MCUs</a>
+      <a href="../research/fpc-connectors.html">FPC connectors</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1>Cheap MCUs (&lt; $0.50) with I2C and no external parts required</h1>
+<p>Availability on both <a href="https://jlcpcb.com/parts">JLCPCB's PCBA parts library</a> and
+<a href="https://www.nextpcb.com/rev0-pcba">NextPCB's Rev0 service</a> (which sources
+components from <a href="https://www.hqonline.com/">HQ Online</a>'s in-stock inventory).</p>
+<p>Requirements applied: unit price under $0.50 at 100 pieces on <strong>both</strong>
+services, internal flash, internal RC oscillator, internal power-on reset
+(i.e. runs with nothing but supply decoupling), and a hardware I2C peripheral.</p>
+<p>Data collected 2026-09-01 with <a href="tools/partsearch.py"><code>tools/partsearch.py</code></a>;
+raw output in <a href="data/cheap-mcus.jsonl"><code>data/cheap-mcus.jsonl</code></a>. Prices are the
+<strong>unit price at a quantity of 100</strong> in USD (multiply by 100 for the cost of
+100 units).</p>
+<h2>Available on both services</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Product ID</th>
+<th>Manufacturer</th>
+<th>JLCPCB unit @100</th>
+<th>NextPCB unit @100</th>
+<th>JLCPCB</th>
+<th>NextPCB (HQ Online)</th>
+<th>Manufacturer page</th>
+<th>Datasheet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PY32F002AW15U6TR (QFN-16)</td>
+<td>Puya</td>
+<td>$0.1606 (34,614 in stock)</td>
+<td>$0.1499 (400 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/PUYA-PY32F002AW15U6TR/C5291740">C5291740</a></td>
+<td><a href="https://www.hqonline.com/product-detail/8-bit-mcu-microcontrollers-puya-py32f002aw15u6tr-2500438827">PY32F002AW15U6TR</a></td>
+<td><a href="https://py32.org/en/mcu/PY32F002Axx">py32.org</a>¹</td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2303271200_PUYA--PY32F002AW15U6TR_C5291740.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>CH32V003J4M6 (SOP-8)</td>
+<td>WCH</td>
+<td>$0.1845 (29,690 in stock)</td>
+<td>$0.1722 (858 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH32V003J4M6/C5346354">C5346354</a></td>
+<td><a href="https://www.hqonline.com/product-detail/32-bit-mcu-microcontrollers-wch-ch32v003j4m6-2500409955">CH32V003J4M6</a></td>
+<td><a href="https://www.wch-ic.com/products/CH32V003.html">wch-ic.com</a></td>
+<td><a href="https://www.wch-ic.com/downloads/CH32V003DS0_PDF.html">PDF (WCH)</a></td>
+</tr>
+<tr>
+<td>STC8G1K08-36I-SOP8</td>
+<td>STC Micro</td>
+<td>$0.1966 (3,585 in stock)</td>
+<td>$0.1835 (577 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/STCMicro-STC8G1K08_36ISOP8/C713818">C713818</a>²</td>
+<td><a href="https://www.hqonline.com/product-detail/32-bit-mcu-microcontrollers-stc-stc8g1k08-36i-sop8-2500336185">STC8G1K08-36I-SOP8</a></td>
+<td><a href="https://www.stcmicro.com/stc/stc8g1k08.html">stcmicro.com</a></td>
+<td><a href="https://www.stcmicro.com/datasheet/STC8G-en.pdf">PDF (STC, STC8G family)</a></td>
+</tr>
+<tr>
+<td>CH32V003A4M6 (SOP-16)</td>
+<td>WCH</td>
+<td>$0.2151 (2,117 in stock)</td>
+<td>$0.2008 (100 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH32V003A4M6/C5346357">C5346357</a></td>
+<td><a href="https://www.hqonline.com/product-detail/32-bit-mcu-microcontrollers-wch-ch32v003a4m6-2500439164">CH32V003A4M6</a></td>
+<td><a href="https://www.wch-ic.com/products/CH32V003.html">wch-ic.com</a></td>
+<td><a href="https://www.wch-ic.com/downloads/CH32V003DS0_PDF.html">PDF (WCH)</a></td>
+</tr>
+<tr>
+<td>CH32V006F8U7 (QFN-20)</td>
+<td>WCH</td>
+<td>$0.2174 (2,915 in stock)</td>
+<td>$0.1957 (1,950 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH32V006F8U7/C55112440">C55112440</a></td>
+<td><a href="https://www.hqonline.com/product-detail/32-bit-mcu-microcontrollers-wch-ch32v006f8u7-1046732864">CH32V006F8U7</a></td>
+<td><a href="https://www.wch-ic.com/products/CH32V006.html">wch-ic.com</a></td>
+<td><a href="https://www.wch-ic.com/downloads/CH32V006DS0_PDF.html">PDF (WCH)</a></td>
+</tr>
+<tr>
+<td>CH32V003F4P6 (TSSOP-20)</td>
+<td>WCH</td>
+<td>$0.2237 (12,635 in stock)</td>
+<td>$0.2088 (3,951 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH32V003F4P6/C5187096">C5187096</a></td>
+<td><a href="https://www.hqonline.com/product-detail/32-bit-mcu-microcontrollers-wch-ch32v003f4p6-2500421881">CH32V003F4P6</a></td>
+<td><a href="https://www.wch-ic.com/products/CH32V003.html">wch-ic.com</a></td>
+<td><a href="https://www.wch-ic.com/downloads/CH32V003DS0_PDF.html">PDF (WCH)</a></td>
+</tr>
+<tr>
+<td>PY32F030K28T6 (LQFP-32)</td>
+<td>Puya</td>
+<td>$0.4185 (1,391 in stock)</td>
+<td>$0.3947 (100 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/PUYA-PY32F030K28T6/C3018720">C3018720</a></td>
+<td><a href="https://www.hqonline.com/product-detail/8-bit-mcu-microcontrollers-puya-py32f030k28t6-2500438830">PY32F030K28T6</a></td>
+<td><a href="https://www.puyasemi.com/en/py32f030.html">puyasemi.com</a></td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2205171716_PUYA--PY32F030K28T6_C3018720.pdf">PDF (LCSC)</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>¹ Puya's own English site no longer lists the PY32F002A series (checked
+2026-09-01: it does not appear in the PY32-series navigation at
+<a href="https://www.puyasemi.com/en/py32_series.html">puyasemi.com/en/py32_series.html</a>);
+<a href="https://py32.org/en/mcu/PY32F002Axx">py32.org</a> (OpenPuya) is the best
+persistent documentation page.</p>
+<p>² JLCPCB stocks this MPN twice; <a href="https://jlcpcb.com/partdetail/STCMicro-STC8G1K08_36ISOP8/C18208924">C18208924</a>
+is $0.1893 with 30,889 in stock. The A-variant
+<a href="https://jlcpcb.com/partdetail/STCMicro-STC8G1K08A_36ISOP8/C915663">STC8G1K08A-36I-SOP8, C915663</a>
+($0.2136, 96,225 in stock) is JLCPCB-only.</p>
+<p>Family notes:</p>
+<ul>
+<li><strong>CH32V003</strong> (RISC-V RV32EC, 48 MHz, 16 KB flash / 2 KB RAM, internal 24 MHz
+  RC, 1× I2C) — the same die in SOP-8 / SOP-16 / TSSOP-20 / QFN-20; the QFN-20
+  (<a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH32V003F4U6/C5299908">C5299908</a>,
+  $0.2527, 5,000 in stock) was not found on HQ Online. Programmed via WCH's
+  1-wire SWIO (needs a WCH-LinkE).</li>
+<li><strong>CH32V006</strong> (RV32EmC, 48 MHz, 62 KB flash / 8 KB RAM) — newer CH32V003
+  successor, also single-wire debug.</li>
+<li><strong>PY32F002A</strong> (Cortex-M0+, 24 MHz, 20 KB flash / 3 KB RAM, internal 24 MHz
+  RC, 1× I2C) — programmed via standard SWD, works with ordinary ST-Link/DAP
+  probes and the community <a href="https://py32.org/">py32.org</a> toolchain. HQ Online
+  also stocks SOP-8 (PY32F002AL15S6TU, $0.1482) and TSSOP-20
+  (PY32F002AF15P6TU, $0.1544) variants, but JLCPCB had those package variants
+  at 0 stock, so only the QFN-16 overlaps.</li>
+<li><strong>STC8G1K08</strong> (1T 8051, up to 36 MHz internal RC, 8 KB flash, hardware I2C)
+  — programmed over UART with a bootloader, no probe needed at all.</li>
+<li><strong>PY32F030</strong> (Cortex-M0+, 48 MHz, 64 KB flash / 8 KB RAM) — the "big"
+  option, still under $0.50 on both.</li>
+</ul>
+<p>All of the above run from their internal oscillator with internal POR and
+BOR — the only external parts required are supply decoupling capacitors.</p>
+<h2>Recommendation</h2>
+<p>For an I2C peripheral device on a camera LED board, <strong>CH32V003J4M6</strong> (SOP-8)
+or <strong>PY32F002AW15U6TR</strong> (QFN-16) are the sweet spot at ~$0.15–0.21 on both
+services with five-digit JLCPCB stock. Choose PY32F002A if standard SWD
+programming matters; choose CH32V003 for the larger community (ch32fun etc.)
+and easier-to-solder SOP-8. Note the CH32V003's I2C slave mode is
+well-supported in ch32fun examples.</p>
+</main>
+<footer class="site">
+  Data collected 2026-09-01 from jlcpcb.com and hqonline.com.
+  Generated from <a href="../research/cheap-mcus.md">research/cheap-mcus.md</a> by
+  <code>research/tools/render_html.py</code>.
+</footer>
+</body>
+</html>

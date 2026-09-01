@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>FPC connectors compatible with the RPi camera cable (1.0 mm pitch, 15 pin)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #F7F5F1;
+  --surface: #FFFFFF;
+  --ink: #20262A;
+  --muted: #66707A;
+  --accent: #A85B28;
+  --accent-ink: #8C4A1F;
+  --line: #E2DDD4;
+  --row: #FAF8F4;
+  --warn: #8A5A00;
+  --code-bg: #F0EDE7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #181B1E;
+    --surface: #20242A;
+    --ink: #E9E6E0;
+    --muted: #9AA3AB;
+    --accent: #D68F52;
+    --accent-ink: #E0A06E;
+    --line: #333941;
+    --row: #24282F;
+    --warn: #E0B25E;
+    --code-bg: #272C33;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #181B1E;
+  --surface: #20242A;
+  --ink: #E9E6E0;
+  --muted: #9AA3AB;
+  --accent: #D68F52;
+  --accent-ink: #E0A06E;
+  --line: #333941;
+  --row: #24282F;
+  --warn: #E0B25E;
+  --code-bg: #272C33;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+header.site {
+  border-bottom: 2px solid var(--accent);
+  background: var(--surface);
+}
+header.site .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 24px 14px;
+}
+header.site .kicker {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+header.site .kicker a { color: inherit; text-decoration: none; }
+header.site .kicker a:hover { text-decoration: underline; }
+nav.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin-top: 8px;
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+nav.pages a { color: var(--muted); text-decoration: none; padding: 2px 0; }
+nav.pages a:hover { color: var(--accent); }
+nav.pages a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+}
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 24px 64px;
+}
+main > * { max-width: 72ch; }
+main > .table-wrap, main > hr { max-width: none; }
+h1, h2, h3 {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+h1 { font-size: 30px; font-weight: 700; margin: 28px 0 10px; }
+h2 {
+  font-size: 21px;
+  font-weight: 600;
+  margin: 40px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+h3 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+strong { font-weight: 600; }
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+ul { padding-left: 22px; }
+li { margin: 4px 0; }
+.table-wrap { overflow-x: auto; margin: 18px 0; }
+table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  min-width: 640px;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 14px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+tbody tr:nth-child(even) td { background: var(--row); }
+td:first-child, td:first-child a {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+td strong { color: var(--warn); }
+footer.site {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 24px 40px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  a { transition: color 120ms ease; }
+}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="inner">
+    <div class="kicker"><a href="../index.html">RPi Camera LED — part availability research</a></div>
+    <nav class="pages">
+      <a href="../index.html">Overview</a>
+      <a href="../research/i2c-rgb-leds.html">I2C RGB LEDs</a>
+      <a href="../research/i2c-gpio-expanders.html">GPIO expanders</a>
+      <a href="../research/cheap-mcus.html">Cheap MCUs</a>
+      <a href="../research/fpc-connectors.html" aria-current="page">FPC connectors</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1>FPC connectors compatible with the RPi camera cable (1.0 mm pitch, 15 pin)</h1>
+<p>Availability on both <a href="https://jlcpcb.com/parts">JLCPCB's PCBA parts library</a> and
+<a href="https://www.nextpcb.com/rev0-pcba">NextPCB's Rev0 service</a> (which sources
+components from <a href="https://www.hqonline.com/">HQ Online</a>'s in-stock inventory).</p>
+<p>The standard Raspberry Pi camera cable is a 15-way, 1.0 mm pitch, 0.3 mm thick
+FFC with stiffened ends and contacts exposed on one side only. Any 15-position
+1.0 mm FFC/FPC connector accepting 0.3 mm cable works mechanically; <strong>pick top-
+vs bottom-contact to match which side of the cable faces your board</strong>. The
+connector family used on Raspberry Pi boards themselves is Amphenol's SFW15R.</p>
+<p>Data collected 2026-09-01 with <a href="tools/partsearch.py"><code>tools/partsearch.py</code></a>;
+raw output in <a href="data/fpc-connectors.jsonl"><code>data/fpc-connectors.jsonl</code></a>. Prices
+are the <strong>unit price at a quantity of 100</strong> in USD (multiply by 100 for the
+cost of 100 units).</p>
+<h2>Available on both services</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Product ID</th>
+<th>Manufacturer</th>
+<th>JLCPCB unit @100</th>
+<th>NextPCB unit @100</th>
+<th>JLCPCB</th>
+<th>NextPCB (HQ Online)</th>
+<th>Manufacturer page</th>
+<th>Datasheet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AFA07-S15FCA-00 (bottom contact, slide lock)</td>
+<td>JUSHUO (JS)</td>
+<td>$0.0940 (6,252 in stock)</td>
+<td>$0.0876 (1,634 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/JUSHUO-AFA07_S15FCA00/C262721">C262721</a></td>
+<td><a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-js-afa07-s15fca-00-2500245049">AFA07-S15FCA-00</a></td>
+<td><a href="http://www.jushuo.com/">jushuo.com</a>¹</td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_JUSHUO-AFA07-S15FCA-00_C262721.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>AFA07-S15ECA-00 (top contact, slide lock)</td>
+<td>JUSHUO (JS)</td>
+<td>$0.1055 (12,866 in stock)</td>
+<td>$0.0985 (1,500 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/JUSHUO-AFA07_S15ECA00/C262742">C262742</a></td>
+<td><a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-js-afa07-s15eca-00-2500245070">AFA07-S15ECA-00</a>²</td>
+<td><a href="http://www.jushuo.com/">jushuo.com</a>¹</td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_JUSHUO-AFA07-S15ECA-00_C262742.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>1.0K-FX-15PWB (bottom contact, slide lock)</td>
+<td>HDGC</td>
+<td>$0.0933 (<strong>only 3 in stock</strong>)</td>
+<td>$0.1296 (<strong>only 5 in stock</strong>)</td>
+<td><a href="https://jlcpcb.com/partdetail/HDGC-1_0K_FX15PWB/C2914074">C2914074</a></td>
+<td><a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-hdgc-1-0k-fx-15pwb-2500406100">1.0K-FX-15PWB</a></td>
+<td><a href="http://www.hdgc.cn/">hdgc.cn</a>¹</td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2111021330_HDGC-1-0K-FX-15PWB_C2914074.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>FPC-1.0FX-15PWCR-H20 (bottom contact, flip lock)</td>
+<td>XUNPU</td>
+<td>$0.1510 (3,270 in stock)</td>
+<td>$0.1339 (1,440 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/XUNPU-FPC_1_0FX_15PWCRH20/C19269358">C19269358</a></td>
+<td><a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-xunpu-fpc-1-0fx-15pwcr-h20-2500437310">FPC-1.0FX-15PWCR-H20</a></td>
+<td>—¹</td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2311211841_XUNPU-FPC-1-0FX-15PWCR-H20_C19269358.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>SFW15R-1STE1LF (bottom contact, slide lock)</td>
+<td>Amphenol ICC</td>
+<td>$0.3893 (5,576 in stock)</td>
+<td>$0.3690 (3,962 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/AmphenolICC-SFW15R1STE1LF/C3168538">C3168538</a></td>
+<td><a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-amphenol-sfw15r-1ste1lf-2500434032">SFW15R-1STE1LF</a></td>
+<td><a href="https://www.amphenol-cs.com/product/sfw15r1ste1lf.html">amphenol-cs.com</a></td>
+<td><a href="https://cdn.amphenol-cs.com/media/wysiwyg/files/documentation/datasheet/flex/flexconnectors_100mm_sfw_r.pdf">PDF (Amphenol, SFW-R series)</a>³</td>
+</tr>
+</tbody>
+</table></div>
+<p>All are right-angle (horizontal) SMD, 1.0 mm pitch, 15 position, for 0.3 mm
+FFC.</p>
+<p>¹ The budget connector makers have no per-part web pages: JUSHUO and HDGC only
+have corporate sites, and XUNPU's site (xunpu.com) failed TLS when checked, so
+the LCSC-hosted datasheets are the authoritative document links.
+² HQ Online also carries a CAX-branded clone,
+<a href="https://www.hqonline.com/product-detail/fpc---ffc-connectors-cax-afa07-s15eca-00-h2-5-2500419281">AFA07-S15ECA-00-H2.5</a>
+at $0.0642 (180 in stock).
+³ The Amphenol CDN rejects non-browser clients (HTTP 403); verified in a real
+browser on 2026-09-01 (HTTP 200, 504 KB <code>application/pdf</code>). The per-part
+<a href="https://cdn.amphenol-cs.com/media/wysiwyg/files/drawing/10172241.pdf">product drawing</a>
+(same caveat) is linked from the product page's Documentation section.</p>
+<h2>Near misses (JLCPCB only, not stocked by HQ Online)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Product ID</th>
+<th>Manufacturer</th>
+<th>JLCPCB unit @100</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/AmphenolICC-SFW15R2STE1LF/C3167933">SFW15R-2STE1LF</a></td>
+<td>Amphenol ICC</td>
+<td>$0.8385 (only 44 in stock)</td>
+<td>Dual-contact variant — the exact part used on Raspberry Pi boards</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/HongCheng-HC_FPC_1_0_15PFHH20/C49166884">HC-FPC-1.0-15P-FHH20</a></td>
+<td>Hong Cheng</td>
+<td>$0.1647 (1,401 in stock)</td>
+<td>Dual contact, flip lock — accepts the cable either way up</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/HongCheng-HC_FPC_1_0_15PCXH25/C49166850">HC-FPC-1.0-15P-CXH25</a></td>
+<td>Hong Cheng</td>
+<td>$0.0777 (1,103 in stock)</td>
+<td>Bottom contact, slide lock — cheapest 15P option on JLCPCB</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/HDGC-1_0K_GT15PB/C2915527">1.0K-GT-15PB</a></td>
+<td>HDGC</td>
+<td>$0.1228 (2,998 in stock)</td>
+<td>Vertical-entry slide lock, like the Pi's own connector orientation</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/HongCheng-HC_FPC_1_0_15PLH25/C49166919">HC-FPC-1.0-15P-LH25</a></td>
+<td>Hong Cheng</td>
+<td>$0.1155 (607 in stock)</td>
+<td>Vertical-entry slide lock</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Recommendation</h2>
+<p><strong>AFA07-S15FCA-00 / AFA07-S15ECA-00</strong> (~$0.09–0.11, deep stock on both
+services) are the pragmatic choice — pick the F (bottom) or E (top) contact
+variant once the board's mounting orientation is decided. If you want the
+name-brand part with the highest mating-cycle spec and the same footprint as
+the Pi ecosystem, <strong>SFW15R-1STE1LF</strong> costs ~4× more but is also comfortably
+stocked on both services.</p>
+</main>
+<footer class="site">
+  Data collected 2026-09-01 from jlcpcb.com and hqonline.com.
+  Generated from <a href="../research/fpc-connectors.md">research/fpc-connectors.md</a> by
+  <code>research/tools/render_html.py</code>.
+</footer>
+</body>
+</html>

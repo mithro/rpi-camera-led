@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>I2C GPIO expanders with LED driving capability</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #F7F5F1;
+  --surface: #FFFFFF;
+  --ink: #20262A;
+  --muted: #66707A;
+  --accent: #A85B28;
+  --accent-ink: #8C4A1F;
+  --line: #E2DDD4;
+  --row: #FAF8F4;
+  --warn: #8A5A00;
+  --code-bg: #F0EDE7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #181B1E;
+    --surface: #20242A;
+    --ink: #E9E6E0;
+    --muted: #9AA3AB;
+    --accent: #D68F52;
+    --accent-ink: #E0A06E;
+    --line: #333941;
+    --row: #24282F;
+    --warn: #E0B25E;
+    --code-bg: #272C33;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #181B1E;
+  --surface: #20242A;
+  --ink: #E9E6E0;
+  --muted: #9AA3AB;
+  --accent: #D68F52;
+  --accent-ink: #E0A06E;
+  --line: #333941;
+  --row: #24282F;
+  --warn: #E0B25E;
+  --code-bg: #272C33;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+header.site {
+  border-bottom: 2px solid var(--accent);
+  background: var(--surface);
+}
+header.site .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 24px 14px;
+}
+header.site .kicker {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+header.site .kicker a { color: inherit; text-decoration: none; }
+header.site .kicker a:hover { text-decoration: underline; }
+nav.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin-top: 8px;
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+nav.pages a { color: var(--muted); text-decoration: none; padding: 2px 0; }
+nav.pages a:hover { color: var(--accent); }
+nav.pages a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+}
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 24px 64px;
+}
+main > * { max-width: 72ch; }
+main > .table-wrap, main > hr { max-width: none; }
+h1, h2, h3 {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+h1 { font-size: 30px; font-weight: 700; margin: 28px 0 10px; }
+h2 {
+  font-size: 21px;
+  font-weight: 600;
+  margin: 40px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+h3 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+strong { font-weight: 600; }
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+ul { padding-left: 22px; }
+li { margin: 4px 0; }
+.table-wrap { overflow-x: auto; margin: 18px 0; }
+table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  min-width: 640px;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 8px 14px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+tbody tr:nth-child(even) td { background: var(--row); }
+td:first-child, td:first-child a {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+td strong { color: var(--warn); }
+footer.site {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 24px 40px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  a { transition: color 120ms ease; }
+}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="inner">
+    <div class="kicker"><a href="../index.html">RPi Camera LED — part availability research</a></div>
+    <nav class="pages">
+      <a href="../index.html">Overview</a>
+      <a href="../research/i2c-rgb-leds.html">I2C RGB LEDs</a>
+      <a href="../research/i2c-gpio-expanders.html" aria-current="page">GPIO expanders</a>
+      <a href="../research/cheap-mcus.html">Cheap MCUs</a>
+      <a href="../research/fpc-connectors.html">FPC connectors</a>
+    </nav>
+  </div>
+</header>
+<main>
+<h1>I2C GPIO expanders with LED driving capability</h1>
+<p>Availability on both <a href="https://jlcpcb.com/parts">JLCPCB's PCBA parts library</a> and
+<a href="https://www.nextpcb.com/rev0-pcba">NextPCB's Rev0 service</a> (which sources
+components from <a href="https://www.hqonline.com/">HQ Online</a>'s in-stock inventory).</p>
+<p>Data collected 2026-09-01 with <a href="tools/partsearch.py"><code>tools/partsearch.py</code></a>;
+raw output in <a href="data/i2c-gpio-expanders.jsonl"><code>data/i2c-gpio-expanders.jsonl</code></a>.
+Prices are the <strong>unit price at a quantity of 100</strong> in USD (multiply by 100 for
+the cost of 100 units).</p>
+<h2>Available on both services</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Product ID</th>
+<th>Manufacturer</th>
+<th>JLCPCB unit @100</th>
+<th>NextPCB unit @100</th>
+<th>JLCPCB</th>
+<th>NextPCB (HQ Online)</th>
+<th>Manufacturer page</th>
+<th>Datasheet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AW9523BTQR</td>
+<td>Awinic</td>
+<td>$0.2659 (59,674 in stock)</td>
+<td>$0.2482 (5,584 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/159410-AW9523BTQR/C148077">C148077</a></td>
+<td><a href="https://www.hqonline.com/product-detail/i-o-expanders-awinic-aw9523btqr-2500442592">AW9523BTQR</a></td>
+<td><a href="https://www.awinic.com/en/productDetail/AW9523BTQR">awinic.com</a></td>
+<td><a href="https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/1809192237_AWINIC-Shanghai-Awinic-Tech-AW9523BTQR_C148077.pdf">PDF (LCSC)</a></td>
+</tr>
+<tr>
+<td>CH423S</td>
+<td>WCH</td>
+<td>$0.3084 (2,528 in stock)</td>
+<td>$0.2907 (267 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH423S/C111663">C111663</a></td>
+<td><a href="https://www.hqonline.com/product-detail/i-o-expanders-wch-ch423s-2500352610">CH423S</a></td>
+<td><a href="https://www.wch-ic.com/products/CH423.html">wch-ic.com</a></td>
+<td><a href="https://www.wch-ic.com/downloads/CH423DS1_PDF.html">PDF (WCH)</a></td>
+</tr>
+<tr>
+<td>PCA9685PW,118</td>
+<td>NXP</td>
+<td>$1.9625 (888 in stock)</td>
+<td>$1.8418 (only 7 in stock)</td>
+<td><a href="https://jlcpcb.com/partdetail/NXPSemicon-PCA9685PW118/C2678753">C2678753</a></td>
+<td><a href="https://www.hqonline.com/product-detail/led-lighting-drivers-nxp-pca9685pw-118-2500218737">PCA9685PW,118</a></td>
+<td><a href="https://www.nxp.com/products/power-drivers/lighting-driver-and-controller-ics/led-drivers/16-channel-12-bit-pwm-fm-plus-ic-bus-led-driver:PCA9685">nxp.com</a>¹</td>
+<td><a href="https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf">PDF (NXP)</a>¹</td>
+</tr>
+</tbody>
+</table></div>
+<p>¹ nxp.com serves HTTP 404 to non-browser clients; both links verified in a
+real browser on 2026-09-01 (page loads with HTTP 200, and the datasheet URL
+serves a 408 KB <code>application/pdf</code>).</p>
+<p>Capability summary:</p>
+<ul>
+<li><strong>AW9523BTQR</strong> — 16 GPIO, every pin selectable between GPIO mode and a
+  256-step current-dimmed LED mode (up to 37 mA sink per pin), interrupt
+  output, 4 I2C addresses, TQFN-24 (4×4 mm). The classic "GPIO expander that
+  is also an LED driver".</li>
+<li><strong>CH423S</strong> — 8 bidirectional GPIO + 16 open-drain outputs designed for LED
+  segment/matrix scan driving, SOP-28. No per-pin PWM/current control.</li>
+<li><strong>PCA9685PW</strong> — 16 channels of 12-bit PWM intended for LED control (25 mA
+  sink per output); it is an LED controller rather than a true GPIO expander
+  (outputs only). Note HQ Online only had 7 pieces in stock.</li>
+</ul>
+<h2>Near misses (JLCPCB only, not stocked by HQ Online)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Product ID</th>
+<th>Manufacturer</th>
+<th>JLCPCB unit @100</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/247625-AW9110BTQR/C252443">AW9110BTQR</a></td>
+<td>Awinic</td>
+<td>$0.2936 (0 in stock)</td>
+<td>10-pin version of AW9523B</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/247630-AW9106BTQR/C252448">AW9106BTQR</a></td>
+<td>Awinic</td>
+<td>$0.2498 (0 in stock)</td>
+<td>6-pin version of AW9523B</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/TexasInstruments-TLC59108IPWR/C130031">TLC59108IPWR</a></td>
+<td>Texas Instruments</td>
+<td>$1.2440 (1,708 in stock)</td>
+<td>8-ch 8-bit PWM LED driver</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/NXPSemicon-PCA9632DP1118/C2802665">PCA9632DP1,118</a></td>
+<td>NXP</td>
+<td>$1.6543 (only 15 in stock)</td>
+<td>4-ch PWM LED driver</td>
+</tr>
+<tr>
+<td><a href="https://jlcpcb.com/partdetail/NXPSemicon-PCA9955BTWJ/C2678563">PCA9955BTWJ</a></td>
+<td>NXP</td>
+<td>$1.9381 (138 in stock)</td>
+<td>16-ch constant-current LED driver</td>
+</tr>
+</tbody>
+</table></div>
+<h2>Recommendation</h2>
+<p><strong>AW9523BTQR</strong> is the clear winner for this project: deep stock on both
+services, ~$0.25–0.27 at 100 pieces, and its LED mode does exactly the
+"expander that drives LEDs" job — 16 pins is enough for 5 RGB LEDs with
+per-channel 256-step dimming, no MCU firmware needed.</p>
+</main>
+<footer class="site">
+  Data collected 2026-09-01 from jlcpcb.com and hqonline.com.
+  Generated from <a href="../research/i2c-gpio-expanders.md">research/i2c-gpio-expanders.md</a> by
+  <code>research/tools/render_html.py</code>.
+</footer>
+</body>
+</html>
