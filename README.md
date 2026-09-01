@@ -24,6 +24,16 @@ PWM illumination LEDs and an ambient light sensor. Regenerate with
 `uv run hardware/tools/gen_schematic.py` and verify (ERC + netlist vs design
 intent) with `uv run hardware/tools/check_schematic.py`.
 
+## Firmware
+
+[CH32V003 firmware](firmware/README.md): a fail-safe I2C bootloader plus an
+application exposing camera GPIO control, RPi-side GPIO readback, GPIO
+pass-through, LED brightness (hardware PWM) and an ambient light reading over
+a Linux-friendly SMBus register map at address 0x42. Builds with
+`riscv64-unknown-elf-gcc` and [ch32v003fun](https://github.com/cnlohr/ch32v003fun)
+(`git submodule update --init`, then `make` in `firmware/bootloader` and
+`firmware/app`).
+
 ## License
 
 Apache 2.0
