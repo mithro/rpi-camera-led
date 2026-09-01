@@ -2545,17 +2545,6 @@
 		)
 		(uuid "9b2cadfa-bc85-44f7-84ef-92d4a59d891b")
 	)
-	(text "J1 and J2 are deliberately different parts: J1 bottom contact, J2 top contact.\nTop contact mirrors J2's cable-to-pad order, which cancels the 180 deg rotation\nbetween two connectors whose cables leave opposite edges -- so every J1->J2 net\nruns straight across on one layer instead of crossing the whole bus.\nCost: the camera-side cable goes in contacts up, i.e. flipped from the Pi side.\nUse an opposite-side (type D) FFC there, or fold a standard same-side one."
-		(exclude_from_sim no)
-		(at 181.61 149.86 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9bef9f8c-a15b-4fe1-b20e-8a6d92625718")
-	)
 	(text "SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\nand PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\nPC6, PC7, PD4 and PC0 are spare. PD7 is left unused on purpose: it is NRST\nuntil the RST_MODE option byte says otherwise, so a Pi GPIO on it would\nreset the MCU on a factory-fresh part."
 		(exclude_from_sim no)
 		(at 95 193 0)
@@ -5847,7 +5836,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm top contact (to camera)"
+		(property "Value" "FFC 15P 1.0mm (to camera)"
 			(at 77.978 82.55 90)
 			(effects
 				(font
@@ -5855,7 +5844,7 @@
 				)
 			)
 		)
-		(property "Footprint" "rpi-camera-led:JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
+		(property "Footprint" "Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -5882,7 +5871,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15ECA-00 (top contact, LCSC C262742)"
+		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -6029,7 +6018,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm bottom contact (to Raspberry Pi)"
+		(property "Value" "FFC 15P 1.0mm (to Raspberry Pi)"
 			(at 20.066 82.55 90)
 			(effects
 				(font
@@ -6064,7 +6053,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15FCA-00 (bottom contact, LCSC C262721)"
+		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
 			(at 22.86 82.55 0)
 			(effects
 				(font

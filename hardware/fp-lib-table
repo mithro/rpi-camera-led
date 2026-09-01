@@ -1,4 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "rpi-camera-led")(type "KiCad")(uri "${KIPRJMOD}/rpi-camera-led.pretty")(options "")(descr "Project footprints not in the stock KiCad libraries"))
-)
