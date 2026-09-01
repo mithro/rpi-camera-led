@@ -60,8 +60,6 @@ header.site {
   background: var(--surface);
 }
 header.site .inner {
-  max-width: 1180px;
-  margin: 0 auto;
   padding: 20px 24px 14px;
 }
 header.site .kicker {
@@ -91,12 +89,8 @@ nav.pages a[aria-current="page"] {
   border-bottom: 2px solid var(--accent);
 }
 main {
-  max-width: 1180px;
-  margin: 0 auto;
   padding: 12px 24px 64px;
 }
-main > * { max-width: 660px; margin-inline: auto; }
-main > .table-wrap, main > hr { max-width: 100%; }
 h1, h2, h3 {
   font-family: Archivo, "Segoe UI", system-ui, sans-serif;
   line-height: 1.2;
@@ -123,8 +117,9 @@ code {
 }
 ul { padding-left: 22px; }
 li { margin: 4px 0; }
-.table-wrap { overflow-x: auto; margin-block: 18px; width: fit-content; }
+.table-wrap { overflow-x: auto; margin-block: 18px; }
 table {
+  width: 100%;
   border-collapse: collapse;
   font-size: 14px;
   line-height: 1.45;
@@ -155,12 +150,9 @@ td:first-child, td:first-child a {
 }
 td strong { color: var(--warn); }
 footer.site {
-  text-align: center;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 13.5px;
-  max-width: 1180px;
-  margin: 0 auto;
   padding: 14px 24px 40px;
 }
 @media (prefers-reduced-motion: no-preference) {
