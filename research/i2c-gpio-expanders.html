@@ -155,6 +155,12 @@ footer.site {
   font-size: 13.5px;
   padding: 14px 24px 40px;
 }
+th { cursor: pointer; user-select: none; }
+th:hover, th:focus-visible { color: var(--accent); }
+th::after { display: inline-block; width: 1.1em; text-align: right; }
+th:not([aria-sort]):hover::after, th:not([aria-sort]):focus-visible::after { content: "↕"; }
+th[aria-sort="ascending"]::after { content: "▲"; color: var(--accent); }
+th[aria-sort="descending"]::after { content: "▼"; color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) {
   a { transition: color 120ms ease; }
 }
@@ -298,5 +304,40 @@ per-channel 256-step dimming, no MCU firmware needed.</p>
   Generated from <a href="../research/i2c-gpio-expanders.md">research/i2c-gpio-expanders.md</a> by
   <code>research/tools/render_html.py</code>.
 </footer>
+<script>
+document.querySelectorAll("table").forEach((table) => {
+  const tbody = table.tBodies[0];
+  const head = table.tHead;
+  if (!tbody || !head) return;
+  head.querySelectorAll("th").forEach((th, col) => {
+    th.tabIndex = 0;
+    const sort = () => {
+      const dir = th.getAttribute("aria-sort") === "ascending" ? -1 : 1;
+      head.querySelectorAll("th").forEach((h) => h.removeAttribute("aria-sort"));
+      th.setAttribute("aria-sort", dir === 1 ? "ascending" : "descending");
+      const rows = Array.from(tbody.rows);
+      const text = (r) => (r.cells[col]?.textContent ?? "").trim();
+      const lead = (t) => {
+        const m = t.replace(/[$,]/g, "").match(/^-?\d+(\.\d+)?/);
+        return m ? parseFloat(m[0]) : null;
+      };
+      const numeric =
+        rows.length > 0 && rows.every((r) => lead(text(r)) !== null);
+      rows.sort((a, b) => {
+        const ta = text(a), tb = text(b);
+        const cmp = numeric
+          ? lead(ta) - lead(tb)
+          : ta.localeCompare(tb, undefined, { numeric: true, sensitivity: "base" });
+        return dir * cmp;
+      });
+      rows.forEach((r) => tbody.appendChild(r));
+    };
+    th.addEventListener("click", sort);
+    th.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(); }
+    });
+  });
+});
+</script>
 </body>
 </html>
