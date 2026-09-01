@@ -70,16 +70,16 @@ PLACE = {
     "R6": (28.30, 24.70, 90),      # PI_IO0 <-> CAM_IO0 coupler
     "R7": (28.30, 27.20, 90),      # PI_IO1 <-> CAM_IO1 coupler
     "C1": (28.30, 29.60, 90),      # 100 nF, beside U1 VDD/VSS
-    "R2": (36.75, 24.70, 90),      # SCL pull-up
-    "R1": (36.75, 26.80, 90),      # SDA pull-up
-    "C2": (36.75, 28.90, 90),      # 1 uF bulk
+    "R2": (36.90, 41.70, 90),      # SCL pull-up, beside the Qwiic connector
+    "R1": (36.90, 39.70, 90),      # SDA pull-up, beside the Qwiic connector
+    "C2": (28.35, 31.60, 90),      # 1 uF bulk
     "R5": (34.50, 30.00, 180),     # 100R, SWIO -> LED_GATE
     "Q1": (30.80, 31.40, 0),       # AO3400A low-side LED switch
     "R8": (34.50, 31.40, 0),       # LED_GATE pull-down
     "R9": (34.50, 32.80, 0),       # 47k phototransistor load
     "R3": (29.20, 34.10, 0),       # 10R to D1
     "R4": (35.00, 34.10, 0),       # 10R to D2
-    "D1": (29.30, 36.20, 0),       # illumination LED (left)
+    "D1": (29.45, 36.20, 0),       # illumination LED (left)
     "D2": (35.00, 36.20, 0),       # illumination LED (right)
     "Q2": (32.15, 35.40, 90),      # phototransistor, between the two LEDs
     "J3": (32.50, 40.582, 0),      # Qwiic, opening flush with the bottom edge
