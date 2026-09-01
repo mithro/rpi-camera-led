@@ -2545,6 +2545,17 @@
 		)
 		(uuid "9b2cadfa-bc85-44f7-84ef-92d4a59d891b")
 	)
+	(text "J1 and J2 are deliberately different parts: J1 bottom contact, J2 top contact.\nTop contact mirrors J2's cable-to-pad order, which cancels the 180 deg rotation\nbetween two connectors whose cables leave opposite edges -- so every J1->J2 net\nruns straight across on one layer instead of crossing the whole bus.\nCost: the camera-side cable goes in contacts up, i.e. flipped from the Pi side.\nUse an opposite-side (type D) FFC there, or fold a standard same-side one."
+		(exclude_from_sim no)
+		(at 181.61 149.86 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9bef9f8c-a15b-4fe1-b20e-8a6d92625718")
+	)
 	(text "SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\nand PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\nPC6, PC7, PD4 and PC0 are spare. PD7 is left unused on purpose: it is NRST\nuntil the RST_MODE option byte says otherwise, so a Pi GPIO on it would\nreset the MCU on a factory-fresh part."
 		(exclude_from_sim no)
 		(at 95 193 0)
@@ -2655,6 +2666,10 @@
 	(no_connect
 		(at 160.02 52.07)
 		(uuid "4f6c7d2f-b182-439e-adb0-5f5178c25a44")
+	)
+	(no_connect
+		(at 160.02 59.69)
+		(uuid "cd0735c6-f9a4-4a53-afb8-beedc4954682")
 	)
 	(wire
 		(pts
@@ -3285,6 +3300,16 @@
 			(type default)
 		)
 		(uuid "b5fdb047-745d-45f6-ba5d-3fa22ec97ef8")
+	)
+	(wire
+		(pts
+			(xy 160.02 54.61) (xy 163.83 54.61)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b67a13d4-b974-4233-be15-864913b008f2")
 	)
 	(wire
 		(pts
@@ -4401,6 +4426,28 @@
 				(font
 					(size 1.27 1.27)
 				)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "PI_IO1"
+		(shape bidirectional)
+		(at 163.83 54.61 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a1ae9554-7377-46f3-bada-93dd6ec6a374")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 173.9137 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -5785,6 +5832,7 @@
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x15")
 		(at 74.93 82.55 0)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6519,51 +6567,4 @@
 		)
 	)
 	(embedded_fonts no)
-	(wire
-		(pts
-			(xy 160.02 54.61) (xy 163.83 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b67a13d4-b974-4233-be15-864913b008f2")
-	)
-	(global_label "PI_IO1"
-		(shape bidirectional)
-		(at 163.83 54.61 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "a1ae9554-7377-46f3-bada-93dd6ec6a374")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 173.9137 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(no_connect
-		(at 160.02 59.69)
-		(uuid "cd0735c6-f9a4-4a53-afb8-beedc4954682")
-	)
-	(text "J1 and J2 are deliberately different parts: J1 bottom contact, J2 top contact.\nTop contact mirrors J2's cable-to-pad order, which cancels the 180 deg rotation\nbetween two connectors whose cables leave opposite edges -- so every J1->J2 net\nruns straight across on one layer instead of crossing the whole bus.\nCost: the camera-side cable goes in contacts up, i.e. flipped from the Pi side.\nUse an opposite-side (type D) FFC there, or fold a standard same-side one."
-		(exclude_from_sim no)
-		(at 181.61 149.86 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9bef9f8c-a15b-4fe1-b20e-8a6d92625718")
-	)
 )
