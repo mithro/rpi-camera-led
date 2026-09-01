@@ -7,3 +7,4 @@ tmp/
 *.lck
 *-backups/
 fp-info-cache
+_autosave-*
