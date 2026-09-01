@@ -112,9 +112,20 @@ static void flash_unlock(void)
 	FLASH->MODEKEYR = FLASH_KEY2;
 }
 
+/* Re-lock BOTH the flash controller (LOCK) and fast-programming mode
+ * (FLOCK). Locking only LOCK -- which is all CR_LOCK_Set does -- would
+ * leave FLOCK clear, so the next program_page() would re-run the
+ * MODEKEYR key sequence on an already-unlocked controller. On this
+ * STM32-derived flash controller writing the key sequence when the
+ * matching lock bit is already clear is not a no-op; it is what the
+ * "keys written more than once" wording covers, and it can leave
+ * FLASH_CTLR locked until the next reset -- i.e. every page after the
+ * first would silently fail to program. Locking symmetrically also
+ * makes the `FLASH->CTLR & 0x8080` guard below (which tests LOCK|FLOCK)
+ * a meaningful check rather than a test of LOCK alone. */
 static void flash_lock(void)
 {
-	FLASH->CTLR |= CR_LOCK_Set;
+	FLASH->CTLR |= FLASH_CTLR_LOCK | FLASH_CTLR_FLOCK;
 }
 
 /* Erase+program+verify exactly one FLASH_PAGE_SIZE (64 byte) page of
@@ -134,6 +145,11 @@ static bool program_page(uint8_t page_index, const uint8_t *data /* 64 bytes */)
 		flash_lock();
 		return false;
 	}
+
+	/* Clear any stale end-of-operation / write-protect-error flags so
+	 * they cannot be mistaken for this operation's result. Both are
+	 * rc_w1. */
+	FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
 
 	/* Erase the page. */
 	FLASH->CTLR = CR_PAGE_ER;
@@ -163,9 +179,15 @@ static bool program_page(uint8_t page_index, const uint8_t *data /* 64 bytes */)
 	while (FLASH->STATR & FLASH_STATR_BSY)
 		;
 
+	bool wrprterr = (FLASH->STATR & FLASH_STATR_WRPRTERR) != 0;
+	FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
 	flash_lock();
 
-	/* Read back and verify. */
+	/* Read back and verify. The read-back is authoritative -- the
+	 * WRPRTERR check above only gives a better-defined failure when
+	 * the option-byte write protection is on. */
+	if (wrprterr)
+		return false;
 	return memcmp((const void *)(uintptr_t)phys_addr, data, FLASH_PAGE_SIZE) == 0;
 }
 
