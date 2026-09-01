@@ -74,7 +74,14 @@ at flash address 0 after reset). On every boot it:
 1. Computes the application's CRC32 and compares it to the CRC32
    stored in the application's own trailer.
 2. If valid **and** no upgrade was requested, jumps straight to the
-   application (a few hundred microseconds of overhead).
+   application. This is not free: the CRC32 is bit-banged (see
+   `common/crc32.h`, deliberately table-free to save flash) at roughly
+   70 CPU cycles per byte, so 12KiB costs on the order of **20ms** at
+   48MHz. The device does not acknowledge anything on I2C during that
+   window, on every reset and every power-on. That is comfortably
+   inside the time a Raspberry Pi takes to get as far as probing the
+   camera bus, but it is worth knowing about, and it is the price of
+   the guarantee in point 1.
 3. Otherwise, stays resident and serves the I2C bootloader protocol
    until a host either fixes the app and asks it to run, or the app
    itself explicitly asks to be interrupted for an upgrade.
@@ -452,7 +459,19 @@ to try first if bring-up goes badly, so nobody has to rediscover them.
    the next TxE overwriting `DATAR`. That is how the upstream example
    behaves; it has not been scoped.
 
-7. **CRC32 is not a cryptographic checksum**, so a pathological flash
+7. **A CRC-valid but functionally broken app is only recoverable over
+   SWD.** The bootloader's only test is the CRC32; if an image checksums
+   correctly but hangs, or never brings up its I2C slave, or never
+   implements `REG_BOOT`, then the bootloader will hand control to it on
+   every boot and nothing on the I2C bus can take it back. There is no
+   dwell window in which the bootloader listens before jumping (adding
+   one would mean answering at 0x42 during the camera bus's own probe
+   on every power-up, which is its own hazard). The practical
+   consequence: **only ever ship an app image that has been tested via
+   `upgrade` on a board you can still reach with a WCH-LinkE**, and keep
+   `REG_BOOT` working in every future app revision.
+
+8. **CRC32 is not a cryptographic checksum**, so a pathological flash
    corruption pattern could in principle produce a wrong image whose
    CRC32 matches its own (also corrupted) stored value. See the
    discussion at the end of "Upgrade protocol" -- this is not a
