@@ -2523,9 +2523,9 @@
 		)
 		(uuid "6313a208-6745-45c8-b92e-ff7d2195625c")
 	)
-	(text "R6/R7 couple the Pi's CAM_IO pins to the camera pins/U1: with U1\nhigh-Z (or unpopulated) the Pi's state passes through and U1 can read\nit; when U1 drives, it overrides the Pi through the 10k."
+	(text "R6/R7 (0R, DNP) are a bypass: fit them to wire the Pi's CAM_IO pins\nstraight to the camera, e.g. when U1 is unpopulated. Left off, U1 sits in\nthe middle -- it watches the Pi on PD6/PD7 and drives the camera on PA1/PA2.\nDo not fit them while U1 drives: 0R gives contention no current limit."
 		(exclude_from_sim no)
-		(at 16.256 114.3 0)
+		(at 16.256 120.65 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4827,7 +4827,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "039bce9f-b930-4457-bcda-4cda1864d010")
 		(property "Reference" "R7"
 			(at 46.99 72.39 90)
@@ -5624,7 +5624,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "9ff6c460-79dc-4891-854c-24a1f6d90ddd")
 		(property "Reference" "R6"
 			(at 46.99 74.93 90)
