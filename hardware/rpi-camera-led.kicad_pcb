@@ -3004,7 +3004,7 @@
 	(footprint "rpi-camera-led:JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "8b2ca70e-b207-4ae4-8d49-c5695c326886")
-		(at 41.55 31.98 90)
+		(at 42.175 31.931 90)
 		(descr "JUSHUO FPC connector, 15 TOP-side contacts, 1.0mm pitch, 2.5mm height, SMT. Same land pattern as the bottom-contact AFA07-S15FCA-00 (identical recommended PCB pattern in the shared AFA07 series drawing); only the contact side differs, so the cable inserts flipped. https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JUSHUO-AFA07-S15ECA-00_C262742.pdf")
 		(tags "jushuo fpc top contact")
 		(property "Reference" "J2"
