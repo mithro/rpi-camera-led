@@ -124,22 +124,22 @@ main {
   margin: 0 auto;
   padding: 12px 24px 64px;
 }
-main > * { max-width: 72ch; }
-main > .table-wrap, main > hr { max-width: none; }
+main > * { max-width: 660px; margin-inline: auto; }
+main > .table-wrap, main > hr { max-width: 100%; }
 h1, h2, h3 {
   font-family: Archivo, "Segoe UI", system-ui, sans-serif;
   line-height: 1.2;
   text-wrap: balance;
 }
-h1 { font-size: 30px; font-weight: 700; margin: 28px 0 10px; }
+h1 { font-size: 30px; font-weight: 700; margin-block: 28px 10px; }
 h2 {
   font-size: 21px;
   font-weight: 600;
-  margin: 40px 0 10px;
+  margin-block: 40px 10px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
 }
-h3 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
+h3 { font-size: 17px; font-weight: 600; margin-block: 24px 8px; }
 a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:hover { color: var(--accent); }
 strong { font-weight: 600; }
@@ -152,7 +152,7 @@ code {
 }
 ul { padding-left: 22px; }
 li { margin: 4px 0; }
-.table-wrap { overflow-x: auto; margin: 18px 0; }
+.table-wrap { overflow-x: auto; margin-block: 18px; width: fit-content; }
 table {
   border-collapse: collapse;
   font-size: 14px;
@@ -184,6 +184,7 @@ td:first-child, td:first-child a {
 }
 td strong { color: var(--warn); }
 footer.site {
+  text-align: center;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 13.5px;
