@@ -183,9 +183,10 @@ def cmd_via(argv):
 def cmd_path(argv):
     """Route one track that may change layer part way.
 
-    Tokens are either "x,y" board millimetres or "v" (drop a via at the last
-    fixed point, which swaps the active copper layer).  The first token is the
-    start pad, the last is the end pad -- it is double clicked to finish.
+    Tokens are "x,y" board millimetres, or "v" to drop a via at the next fixed
+    point (which swaps the active copper layer).  The first token is the start
+    pad, the last is the end.  pcbnew needs generous settling time between
+    synthetic events or it drops them, hence the sleeps.
     """
     layer = None
     toks = []
@@ -199,41 +200,41 @@ def cmd_path(argv):
             i += 1
 
     t = load_xform()
+    # A modifier left held down by an earlier accelerator turns every click
+    # into ctrl/shift-click, which the router quietly ignores.
+    xdo("keyup", "ctrl", "shift", "alt", "super")
+    time.sleep(0.2)
     xdo("key", "Escape")
-    time.sleep(0.3)
+    time.sleep(0.45)
+    xdo("key", "Escape")
+    time.sleep(0.45)
     if layer:
         xdo("key", LAYER_KEY[layer])
-        time.sleep(0.3)
+        time.sleep(0.45)
 
     def go(tok):
         xs, ys = tok.split(",")
         px, py = mm2px(float(xs), float(ys), t)
         xdo("mousemove", px, py)
-        time.sleep(0.35)
+        time.sleep(0.6)
 
     go(toks[0])
     xdo("key", "x")
-    time.sleep(0.7)
+    time.sleep(0.9)
 
-    for tok in toks[1:-1]:
-        if tok == "v":
-            xdo("key", "v")
-            time.sleep(0.5)
+    for tok in toks[1:]:
+        if tok in ("v", "pgdn", "pgup"):
+            xdo("key", {"v": "v", "pgdn": "Page_Down", "pgup": "Page_Up"}[tok])
+            time.sleep(0.7)
             continue
         go(tok)
         xdo("click", "1")
-        time.sleep(0.35)
+        time.sleep(0.7)
 
-    # Fix the last segment on the destination pad, then leave the router.  A
-    # double click would also end the track but pops up pcbnew's selection
-    # disambiguation menu and leaves a zero length stub behind.
-    go(toks[-1])
-    xdo("click", "1")
-    time.sleep(0.45)
+    xdo("key", "Escape")
+    time.sleep(0.5)
     xdo("key", "Escape")
     time.sleep(0.4)
-    xdo("key", "Escape")
-    time.sleep(0.3)
 
 
 COMMANDS = {
