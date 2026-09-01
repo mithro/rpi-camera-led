@@ -19,10 +19,17 @@ Online](https://www.hqonline.com/)'s 600k+ in-stock inventory):
 
 [KiCad schematic](hardware/rpi-camera-led.kicad_sch) ([PDF](hardware/rpi-camera-led.pdf))
 for the interposer: two 15-pin FFC connectors passing the camera signals
-straight through, with a CH32V003J4M6 providing I2C-controlled camera GPIO,
-PWM illumination LEDs and an ambient light sensor. Regenerate with
-`uv run hardware/tools/gen_schematic.py` and verify (ERC + netlist vs design
+straight through, with a CH32V003A4M6 (SOP-16) providing I2C-controlled camera
+GPIO, PWM illumination LEDs and an ambient light sensor.
+
+Verify it (ERC plus a comparison of the exported netlist against the design
 intent) with `uv run hardware/tools/check_schematic.py`.
+
+The schematic is now maintained by hand in eeschema — the connections between
+adjacent parts are drawn as wires rather than left implicit in matching global
+labels. `hardware/tools/gen_schematic.py` is the generator that bootstrapped it
+and is kept in step with the design, but **running it overwrites the schematic**
+and would discard that manual wiring.
 
 ## License
 
