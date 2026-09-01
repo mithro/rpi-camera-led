@@ -16,6 +16,15 @@ LINKER_SCRIPT:=app.ld
 
 include $(CH32FUN)/ch32fun.mk
 
+# ch32fun.mk's first explicit rule is `$(TARGET).bin : $(TARGET).elf`, and
+# because the include is expanded before anything below it, that rule --
+# not `all` -- becomes make's default goal. A bare `make` therefore
+# linked the image and stopped, skipping BOTH the flash-budget check and
+# the make_trailer.py step, leaving an app.bin with no app_header_t
+# trailer that the bootloader would refuse to run. Claim the default
+# goal back explicitly.
+.DEFAULT_GOAL := build
+
 all : build
 
 # NOT ch32fun.mk's cv_flash. That target runs

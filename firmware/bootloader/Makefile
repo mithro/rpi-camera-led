@@ -13,6 +13,12 @@ LINKER_SCRIPT:=bootloader.ld
 
 include $(CH32FUN)/ch32fun.mk
 
+# ch32fun.mk's first explicit rule is `$(TARGET).bin : $(TARGET).elf`, and
+# the include is expanded before anything below it, so that rule -- not
+# `all` -- would otherwise be make's default goal, and a bare `make`
+# would skip the checksize guard below. Claim the default goal back.
+.DEFAULT_GOAL := build
+
 all : build
 
 flash : cv_flash
