@@ -13,9 +13,13 @@ the cost of 100 units).
 
 | Product ID | Manufacturer | JLCPCB unit @100 | NextPCB unit @100 | JLCPCB | NextPCB (HQ Online) | Manufacturer page | Datasheet |
 |---|---|---|---|---|---|---|---|
-| AW9523BTQR | Awinic | $0.2659 (59,674 in stock) | $0.2482 (5,584 in stock) | [C148077](https://jlcpcb.com/partdetail/159410-AW9523BTQR/C148077) | [AW9523BTQR](https://www.hqonline.com/product-detail/i-o-expanders-awinic-aw9523btqr-2500442592) | [awinic.com](https://www.awinic.com/en/productDetail/AW9523BTQR) | [PDF (LCSC)](https://www.lcsc.com/datasheet/lcsc_datasheet_1809192237_AWINIC-Shanghai-Awinic-Tech-AW9523BTQR_C148077.pdf) |
+| AW9523BTQR | Awinic | $0.2659 (59,674 in stock) | $0.2482 (5,584 in stock) | [C148077](https://jlcpcb.com/partdetail/159410-AW9523BTQR/C148077) | [AW9523BTQR](https://www.hqonline.com/product-detail/i-o-expanders-awinic-aw9523btqr-2500442592) | [awinic.com](https://www.awinic.com/en/productDetail/AW9523BTQR) | [PDF (LCSC)](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/1809192237_AWINIC-Shanghai-Awinic-Tech-AW9523BTQR_C148077.pdf) |
 | CH423S | WCH | $0.3084 (2,528 in stock) | $0.2907 (267 in stock) | [C111663](https://jlcpcb.com/partdetail/WCH_Jiangsu_Qin_Heng-CH423S/C111663) | [CH423S](https://www.hqonline.com/product-detail/i-o-expanders-wch-ch423s-2500352610) | [wch-ic.com](https://www.wch-ic.com/products/CH423.html) | [PDF (WCH)](https://www.wch-ic.com/downloads/CH423DS1_PDF.html) |
-| PCA9685PW,118 | NXP | $1.9625 (888 in stock) | $1.8418 (only 7 in stock) | [C2678753](https://jlcpcb.com/partdetail/NXPSemicon-PCA9685PW118/C2678753) | [PCA9685PW,118](https://www.hqonline.com/product-detail/led-lighting-drivers-nxp-pca9685pw-118-2500218737) | [nxp.com](https://www.nxp.com/products/PCA9685) | [PDF (NXP)](https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf) |
+| PCA9685PW,118 | NXP | $1.9625 (888 in stock) | $1.8418 (only 7 in stock) | [C2678753](https://jlcpcb.com/partdetail/NXPSemicon-PCA9685PW118/C2678753) | [PCA9685PW,118](https://www.hqonline.com/product-detail/led-lighting-drivers-nxp-pca9685pw-118-2500218737) | [nxp.com](https://www.nxp.com/products/power-drivers/lighting-driver-and-controller-ics/led-drivers/16-channel-12-bit-pwm-fm-plus-ic-bus-led-driver:PCA9685)¹ | [PDF (NXP)](https://www.nxp.com/docs/en/data-sheet/PCA9685.pdf)¹ |
+
+¹ nxp.com serves HTTP 404 to non-browser clients; both links verified in a
+real browser on 2026-09-01 (page loads with HTTP 200, and the datasheet URL
+serves a 408 KB `application/pdf`).
 
 Capability summary:
 

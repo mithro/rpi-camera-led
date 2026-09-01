@@ -20,10 +20,10 @@ cost of 100 units).
 | Product ID | Manufacturer | JLCPCB unit @100 | NextPCB unit @100 | JLCPCB | NextPCB (HQ Online) | Manufacturer page | Datasheet |
 |---|---|---|---|---|---|---|---|
 | AFA07-S15FCA-00 (bottom contact, slide lock) | JUSHUO (JS) | $0.0940 (6,252 in stock) | $0.0876 (1,634 in stock) | [C262721](https://jlcpcb.com/partdetail/JUSHUO-AFA07_S15FCA00/C262721) | [AFA07-S15FCA-00](https://www.hqonline.com/product-detail/fpc---ffc-connectors-js-afa07-s15fca-00-2500245049) | [jushuo.com](http://www.jushuo.com/)¹ | [PDF (LCSC)](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_JUSHUO-AFA07-S15FCA-00_C262721.pdf) |
-| AFA07-S15ECA-00 (top contact, slide lock) | JUSHUO (JS) | $0.1055 (12,866 in stock) | $0.0985 (1,500 in stock) | [C262742](https://jlcpcb.com/partdetail/JUSHUO-AFA07_S15ECA00/C262742) | [AFA07-S15ECA-00](https://www.hqonline.com/product-detail/fpc---ffc-connectors-js-afa07-s15eca-00-2500245070)² | [jushuo.com](http://www.jushuo.com/)¹ | [PDF (LCSC)](https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JUSHUO-AFA07-S15ECA-00_C262742.pdf) |
+| AFA07-S15ECA-00 (top contact, slide lock) | JUSHUO (JS) | $0.1055 (12,866 in stock) | $0.0985 (1,500 in stock) | [C262742](https://jlcpcb.com/partdetail/JUSHUO-AFA07_S15ECA00/C262742) | [AFA07-S15ECA-00](https://www.hqonline.com/product-detail/fpc---ffc-connectors-js-afa07-s15eca-00-2500245070)² | [jushuo.com](http://www.jushuo.com/)¹ | [PDF (LCSC)](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_JUSHUO-AFA07-S15ECA-00_C262742.pdf) |
 | 1.0K-FX-15PWB (bottom contact, slide lock) | HDGC | $0.0933 (**only 3 in stock**) | $0.1296 (**only 5 in stock**) | [C2914074](https://jlcpcb.com/partdetail/HDGC-1_0K_FX15PWB/C2914074) | [1.0K-FX-15PWB](https://www.hqonline.com/product-detail/fpc---ffc-connectors-hdgc-1-0k-fx-15pwb-2500406100) | [hdgc.cn](http://www.hdgc.cn/)¹ | [PDF (LCSC)](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2111021330_HDGC-1-0K-FX-15PWB_C2914074.pdf) |
 | FPC-1.0FX-15PWCR-H20 (bottom contact, flip lock) | XUNPU | $0.1510 (3,270 in stock) | $0.1339 (1,440 in stock) | [C19269358](https://jlcpcb.com/partdetail/XUNPU-FPC_1_0FX_15PWCRH20/C19269358) | [FPC-1.0FX-15PWCR-H20](https://www.hqonline.com/product-detail/fpc---ffc-connectors-xunpu-fpc-1-0fx-15pwcr-h20-2500437310) | —¹ | [PDF (LCSC)](https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2311211841_XUNPU-FPC-1-0FX-15PWCR-H20_C19269358.pdf) |
-| SFW15R-1STE1LF (bottom contact, slide lock) | Amphenol ICC | $0.3893 (5,576 in stock) | $0.3690 (3,962 in stock) | [C3168538](https://jlcpcb.com/partdetail/AmphenolICC-SFW15R1STE1LF/C3168538) | [SFW15R-1STE1LF](https://www.hqonline.com/product-detail/fpc---ffc-connectors-amphenol-sfw15r-1ste1lf-2500434032) | [amphenol-cs.com](https://www.amphenol-cs.com/sfw15r-1ste1lf.html) | [PDF (Amphenol drawing)](https://cdn.amphenol-cs.com/media/wysiwyg/files/drawing/sfw15r-1ste1lf.pdf)³ |
+| SFW15R-1STE1LF (bottom contact, slide lock) | Amphenol ICC | $0.3893 (5,576 in stock) | $0.3690 (3,962 in stock) | [C3168538](https://jlcpcb.com/partdetail/AmphenolICC-SFW15R1STE1LF/C3168538) | [SFW15R-1STE1LF](https://www.hqonline.com/product-detail/fpc---ffc-connectors-amphenol-sfw15r-1ste1lf-2500434032) | [amphenol-cs.com](https://www.amphenol-cs.com/product/sfw15r1ste1lf.html) | [PDF (Amphenol, SFW-R series)](https://cdn.amphenol-cs.com/media/wysiwyg/files/documentation/datasheet/flex/flexconnectors_100mm_sfw_r.pdf)³ |
 
 All are right-angle (horizontal) SMD, 1.0 mm pitch, 15 position, for 0.3 mm
 FFC.
@@ -34,8 +34,10 @@ the LCSC-hosted datasheets are the authoritative document links.
 ² HQ Online also carries a CAX-branded clone,
 [AFA07-S15ECA-00-H2.5](https://www.hqonline.com/product-detail/fpc---ffc-connectors-cax-afa07-s15eca-00-h2-5-2500419281)
 at $0.0642 (180 in stock).
-³ The Amphenol CDN rejects non-browser clients (HTTP 403); the link works in a
-browser.
+³ The Amphenol CDN rejects non-browser clients (HTTP 403); verified in a real
+browser on 2026-09-01 (HTTP 200, 504 KB `application/pdf`). The per-part
+[product drawing](https://cdn.amphenol-cs.com/media/wysiwyg/files/drawing/10172241.pdf)
+(same caveat) is linked from the product page's Documentation section.
 
 ## Near misses (JLCPCB only, not stocked by HQ Online)
 
