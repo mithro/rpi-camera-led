@@ -5785,7 +5785,6 @@
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x15")
 		(at 74.93 82.55 0)
-		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
