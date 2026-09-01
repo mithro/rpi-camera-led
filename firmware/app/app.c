@@ -60,8 +60,17 @@ static void update_gpio_channel(uint32_t pin, uint8_t bit)
 	if (copy_en || !oe) {
 		funPinMode(pin, GPIO_CFGLR_IN_FLOAT);
 	} else {
-		funPinMode(pin, GPIO_CFGLR_OUT_10Mhz_PP);
+		/* Load OUTDR *before* enabling the output driver. OUTDR
+		 * keeps whatever was last written to it (0 out of reset),
+		 * so configuring the pin as a push-pull output first would
+		 * drive the stale level onto the camera's GPIO for the few
+		 * cycles until funDigitalWrite() caught up -- a real glitch
+		 * on every 0->1 transition of GPIO_OE. Writing OUTDR while
+		 * the pin is still a floating input has no effect on the
+		 * pin (OUTDR only selects the pull direction in the
+		 * pull-up/pull-down input modes, which this is not). */
 		funDigitalWrite(pin, out_level ? FUN_HIGH : FUN_LOW);
+		funPinMode(pin, GPIO_CFGLR_OUT_10Mhz_PP);
 	}
 
 	/* Live pin read: reflects the Pi's passed-through state when
@@ -77,8 +86,21 @@ static void update_gpio_channel(uint32_t pin, uint8_t bit)
 /* ADC (PC4 / ANALOG_2), continuously sampled + averaged              */
 /* ---------------------------------------------------------------- */
 
-#define LIGHT_SAMPLE_PERIOD_TICKS (FUNCONF_SYSTEM_CORE_CLOCK / 100u) /* ~100Hz */
-#define LIGHT_EMA_SHIFT 3 /* averages over ~2^3 = 8 samples */
+/* SysTick does NOT run at the core clock by default: ch32fun's
+ * handle_reset() writes SysTick->CTLR = 1 (HCLK/8) unless
+ * FUNCONF_SYSTICK_USE_HCLK is set, in which case it writes 5 (HCLK).
+ * See the "SYSTICK info" block in ch32fun.h. Derive the tick rate
+ * instead of assuming it equals FUNCONF_SYSTEM_CORE_CLOCK, or the
+ * sample period silently comes out 8x too long. */
+#if defined(FUNCONF_SYSTICK_USE_HCLK) && FUNCONF_SYSTICK_USE_HCLK
+#define SYSTICK_HZ (FUNCONF_SYSTEM_CORE_CLOCK)
+#else
+#define SYSTICK_HZ (FUNCONF_SYSTEM_CORE_CLOCK / 8u)
+#endif
+
+#define LIGHT_SAMPLE_HZ 100u
+#define LIGHT_SAMPLE_PERIOD_TICKS (SYSTICK_HZ / LIGHT_SAMPLE_HZ)
+#define LIGHT_EMA_SHIFT 3 /* averages over 2^3 = 8 samples */
 
 static void adc_init(void)
 {
@@ -118,21 +140,36 @@ static uint16_t adc_sample(void)
 static void light_poll(void)
 {
 	static uint32_t last_tick;
-	static int32_t ema = 0;
+	/* Accumulator held scaled by 2^LIGHT_EMA_SHIFT. Doing the average
+	 * as `ema += (sample - ema) >> SHIFT` on an unscaled value instead
+	 * loses the low bits of every update, so the filter stalls short
+	 * of its input (a steady 1023 settles at ~1016 and full scale is
+	 * never reachable). */
+	static int32_t acc;
 	static bool primed = false;
 
 	uint32_t now = funSysTick32();
-	if (!primed || (now - last_tick) >= LIGHT_SAMPLE_PERIOD_TICKS) {
-		last_tick = now;
+	if (primed && (now - last_tick) < LIGHT_SAMPLE_PERIOD_TICKS)
+		return;
+	last_tick = now;
+
+	int32_t sample = adc_sample();
+	if (!primed) {
+		acc = sample << LIGHT_EMA_SHIFT; /* start at the first reading */
 		primed = true;
-
-		int32_t sample = adc_sample();
-		ema += (sample - ema) >> LIGHT_EMA_SHIFT;
-
-		uint16_t v = (uint16_t)ema;
-		regs[REG_LIGHT_LO] = (uint8_t)(v & 0xFF);
-		regs[REG_LIGHT_HI] = (uint8_t)(v >> 8);
+	} else {
+		acc += sample - (acc >> LIGHT_EMA_SHIFT);
 	}
+
+	uint16_t v = (uint16_t)(acc >> LIGHT_EMA_SHIFT);
+	/* Publish both halves atomically with respect to the I2C
+	 * interrupt, so a host reading LIGHT_LO..LIGHT_HI in one burst
+	 * can never get the low byte of one sample and the high byte of
+	 * the next. */
+	__disable_irq();
+	regs[REG_LIGHT_LO] = (uint8_t)(v & 0xFF);
+	regs[REG_LIGHT_HI] = (uint8_t)(v >> 8);
+	__enable_irq();
 }
 
 /* ---------------------------------------------------------------- */
@@ -205,6 +242,16 @@ int main(void)
 	SetupI2CSlave(I2C_SLAVE_ADDR, regs, sizeof(regs), onWrite, NULL, false);
 
 	while (1) {
+		/* The I2C slave driver has a single read_only flag for the
+		 * whole register file, and this file must be writable
+		 * (CTRL / GPIO_OUT / GPIO_OE / LED / BOOT), so a host can
+		 * write the read-only registers too. Re-stamp the constant
+		 * ones every pass; GPIO_IN and LIGHT are overwritten by
+		 * their own producers below. */
+		regs[REG_WHO_AM_I] = APP_WHO_AM_I_VALUE;
+		regs[REG_FW_VERSION] = APP_FW_VERSION_VALUE;
+		regs[REG_RESERVED_07] = 0;
+
 		update_gpio_channel(PD6, GPIO_CH0);
 		update_gpio_channel(PA2, GPIO_CH1);
 
