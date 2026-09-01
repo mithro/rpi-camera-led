@@ -43,20 +43,61 @@ volatile uint32_t noinit_boot_flag __attribute__((section(".noinit")));
 static volatile uint8_t regs[BREG_SIZE];
 static volatile uint8_t pending_cmd = BL_CMD_NONE;
 
+/* Authoritative copies of every read-only register. `regs` is the raw
+ * I2C register file and the slave driver lets a host write ANY offset
+ * in it (the driver has a single read_only flag for the whole file, and
+ * this file must be writable for PAGE_INDEX/PAGE_CSUM/PAGE_BUF). The
+ * bootloader therefore never trusts `regs` for anything it decides on;
+ * it keeps the truth here and re-publishes it after every host write.
+ * See publish_ro_regs(). */
+static volatile uint8_t bl_status;
+static uint32_t bl_app_crc32;
+static uint32_t bl_app_size;
+
 /* ---------------------------------------------------------------- */
 /* I2C register file glue                                            */
 /* ---------------------------------------------------------------- */
+
+/* (Re)stamp the read-only part of the I2C register file from the
+ * authoritative shadow state, undoing anything a host wrote there. */
+static void publish_ro_regs(void)
+{
+	regs[BREG_WHO_AM_I] = BOOTLOADER_WHO_AM_I_VALUE;
+	regs[BREG_BL_VERSION] = BOOTLOADER_VERSION_VALUE;
+	regs[BREG_STATUS] = bl_status;
+	regs[BREG_RESERVED_07] = 0;
+	regs[BREG_APP_CRC32_0] = (uint8_t)(bl_app_crc32 >> 0);
+	regs[BREG_APP_CRC32_1] = (uint8_t)(bl_app_crc32 >> 8);
+	regs[BREG_APP_CRC32_2] = (uint8_t)(bl_app_crc32 >> 16);
+	regs[BREG_APP_CRC32_3] = (uint8_t)(bl_app_crc32 >> 24);
+	regs[BREG_APP_SIZE_0] = (uint8_t)(bl_app_size >> 0);
+	regs[BREG_APP_SIZE_1] = (uint8_t)(bl_app_size >> 8);
+	regs[BREG_APP_SIZE_2] = (uint8_t)(bl_app_size >> 16);
+	regs[BREG_APP_SIZE_3] = (uint8_t)(bl_app_size >> 24);
+}
 
 static void onWrite(uint8_t reg, uint8_t length)
 {
 	/* Was BREG_CMD written as part of this transaction? Just record
 	 * the command and let main() (not interrupt context) do the
-	 * actual (multi-millisecond) flash erase/program work. */
+	 * actual (multi-millisecond) flash erase/program work. BUSY is
+	 * raised here, in the same interrupt that accepted the command,
+	 * so a host that polls STATUS immediately after writing CMD can
+	 * never catch the not-yet-started window and mistake the previous
+	 * command's OK bit for this one's. */
 	if (reg <= BREG_CMD && (uint16_t)reg + length > BREG_CMD) {
 		uint8_t cmd = regs[BREG_CMD];
-		if (cmd != BL_CMD_NONE)
+		if (cmd != BL_CMD_NONE) {
 			pending_cmd = cmd;
+			bl_status = (uint8_t)((bl_status & ~(BL_STATUS_OK | BL_STATUS_ERR)) |
+					      BL_STATUS_BUSY);
+		}
 	}
+
+	/* Whatever else this transaction wrote, restore the read-only
+	 * registers. Without this a host could write BL_STATUS_APP_VALID
+	 * into BREG_STATUS itself. */
+	publish_ro_regs();
 }
 
 /* ---------------------------------------------------------------- */
@@ -149,8 +190,12 @@ static uint32_t compute_app_crc(uint32_t app_used_size)
 	return crc;
 }
 
-/* Returns true if the app is valid and safe to run. Always updates
- * regs[BREG_APP_CRC32_*] / regs[BREG_APP_SIZE_*] with what it found. */
+/* Returns true if the app is valid and safe to run. Always updates the
+ * bl_app_crc32 / bl_app_size shadows (and hence the corresponding
+ * read-only registers) with what it found, and folds the result into
+ * BL_STATUS_APP_VALID. Cheap enough (~12KiB of bit-banged CRC32) to be
+ * run unconditionally on every boot and again immediately before any
+ * jump into the application. */
 static bool verify_app(void)
 {
 	const app_header_t *hdr = (const app_header_t *)(uintptr_t)(APP_FLASH_PHYS_BASE + APP_HEADER_OFFSET);
@@ -166,14 +211,13 @@ static bool verify_app(void)
 		ok = (crc == h.app_crc32);
 	}
 
-	regs[BREG_APP_CRC32_0] = (uint8_t)(crc >> 0);
-	regs[BREG_APP_CRC32_1] = (uint8_t)(crc >> 8);
-	regs[BREG_APP_CRC32_2] = (uint8_t)(crc >> 16);
-	regs[BREG_APP_CRC32_3] = (uint8_t)(crc >> 24);
-	regs[BREG_APP_SIZE_0] = (uint8_t)(h.app_used_size >> 0);
-	regs[BREG_APP_SIZE_1] = (uint8_t)(h.app_used_size >> 8);
-	regs[BREG_APP_SIZE_2] = (uint8_t)(h.app_used_size >> 16);
-	regs[BREG_APP_SIZE_3] = (uint8_t)(h.app_used_size >> 24);
+	bl_app_crc32 = crc;
+	bl_app_size = h.app_used_size;
+	if (ok)
+		bl_status |= BL_STATUS_APP_VALID;
+	else
+		bl_status &= (uint8_t)~BL_STATUS_APP_VALID;
+	publish_ro_regs();
 
 	return ok;
 }
@@ -204,46 +248,56 @@ static void jump_to_app(void)
 
 static void handle_cmd(uint8_t cmd)
 {
-	regs[BREG_STATUS] |= BL_STATUS_BUSY;
-	regs[BREG_STATUS] &= ~(BL_STATUS_OK | BL_STATUS_ERR);
+	bl_status = (uint8_t)((bl_status & ~(BL_STATUS_OK | BL_STATUS_ERR)) | BL_STATUS_BUSY);
+	publish_ro_regs();
 
 	switch (cmd) {
 	case BL_CMD_PROGRAM_PAGE: {
 		uint8_t page_index = regs[BREG_PAGE_INDEX];
 		uint16_t want_csum = (uint16_t)regs[BREG_PAGE_CSUM_LO] |
 				     ((uint16_t)regs[BREG_PAGE_CSUM_HI] << 8);
-		uint16_t got_csum = crc16_compute((const uint8_t *)(const void *)&regs[BREG_PAGE_BUF],
-						   FLASH_PAGE_SIZE);
+		/* Snapshot the page buffer first: the I2C interrupt stays
+		 * live throughout, so checksumming and programming must
+		 * both work from the same bytes. */
+		uint8_t buf[FLASH_PAGE_SIZE];
 		bool ok = false;
-		if (got_csum == want_csum) {
-			uint8_t buf[FLASH_PAGE_SIZE];
-			memcpy(buf, (const void *)&regs[BREG_PAGE_BUF], FLASH_PAGE_SIZE);
+		memcpy(buf, (const void *)&regs[BREG_PAGE_BUF], FLASH_PAGE_SIZE);
+		if (crc16_compute(buf, FLASH_PAGE_SIZE) == want_csum)
 			ok = program_page(page_index, buf);
-		}
-		regs[BREG_STATUS] |= ok ? BL_STATUS_OK : BL_STATUS_ERR;
+		/* Programming the app region invalidates whatever the last
+		 * verify concluded about it. */
+		bl_status &= (uint8_t)~BL_STATUS_APP_VALID;
+		bl_status |= ok ? BL_STATUS_OK : BL_STATUS_ERR;
 		break;
 	}
 	case BL_CMD_VERIFY_APP: {
-		bool ok = verify_app();
-		regs[BREG_STATUS] = (regs[BREG_STATUS] & ~(BL_STATUS_OK | BL_STATUS_ERR | BL_STATUS_APP_VALID)) |
-				     (ok ? (BL_STATUS_OK | BL_STATUS_APP_VALID) : BL_STATUS_ERR);
+		bl_status |= verify_app() ? BL_STATUS_OK : BL_STATUS_ERR;
 		break;
 	}
 	case BL_CMD_RUN_APP: {
-		if (regs[BREG_STATUS] & BL_STATUS_APP_VALID) {
-			regs[BREG_STATUS] |= BL_STATUS_OK;
-			regs[BREG_STATUS] &= ~BL_STATUS_BUSY;
+		/* Re-verify from flash right now. Never trust
+		 * BL_STATUS_APP_VALID for this decision: BREG_STATUS lives
+		 * in the host-writable I2C register file, so a host could
+		 * otherwise set the bit itself (a single write of
+		 * [0x02, 0x08, 0x03] sets APP_VALID and issues RUN_APP) and
+		 * make the bootloader jump into a blank or half-programmed
+		 * app region -- exactly the failure the CRC32 exists to
+		 * prevent. */
+		if (verify_app()) {
+			bl_status = (uint8_t)((bl_status | BL_STATUS_OK) & ~BL_STATUS_BUSY);
+			publish_ro_regs();
 			jump_to_app(); /* never returns */
 		}
-		regs[BREG_STATUS] |= BL_STATUS_ERR;
+		bl_status |= BL_STATUS_ERR;
 		break;
 	}
 	default:
-		regs[BREG_STATUS] |= BL_STATUS_ERR;
+		bl_status |= BL_STATUS_ERR;
 		break;
 	}
 
-	regs[BREG_STATUS] &= ~BL_STATUS_BUSY;
+	bl_status &= (uint8_t)~BL_STATUS_BUSY;
+	publish_ro_regs();
 }
 
 /* ---------------------------------------------------------------- */
@@ -256,12 +310,14 @@ int main(void)
 	noinit_boot_flag = 0; /* one-shot */
 
 	memset((void *)regs, 0, sizeof(regs));
-	regs[BREG_WHO_AM_I] = BOOTLOADER_WHO_AM_I_VALUE;
-	regs[BREG_BL_VERSION] = BOOTLOADER_VERSION_VALUE;
+	bl_status = 0;
+	bl_app_crc32 = 0;
+	bl_app_size = 0;
+	publish_ro_regs();
 
+	/* Unconditional, before anything else: this check is the whole
+	 * fail-safety guarantee (see README.md). */
 	bool app_ok = verify_app();
-	if (app_ok)
-		regs[BREG_STATUS] |= BL_STATUS_APP_VALID;
 
 	if (app_ok && !upgrade_requested) {
 		/* Fast path: valid app, no upgrade requested -- run it.
