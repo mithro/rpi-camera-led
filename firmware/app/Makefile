@@ -18,7 +18,18 @@ include $(CH32FUN)/ch32fun.mk
 
 all : build
 
-flash : cv_flash
+# NOT ch32fun.mk's cv_flash. That target runs
+#   minichlink -w app.bin flash -b
+# and minichlink resolves the bare word "flash" to the *start* of flash
+# (0x08000000), so it would write this image -- which is linked for
+# APP_FLASH_BASE = 0x1000 and cannot run from 0 -- straight over the
+# bootloader, bricking the board until it is reflashed over SWD.
+# cv_flash also only depends on $(TARGET).bin, so it could flash an
+# untrailered image that the bootloader would then refuse to run;
+# depending on `build` forces the make_trailer.py step first.
+flash : build $(MINICHLINK)/minichlink
+	$(MINICHLINK)/minichlink -w $(TARGET).bin flash+0x1000 -b
+
 clean : cv_clean
 	rm -f app_trailer.stamp
 
