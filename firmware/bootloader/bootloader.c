@@ -199,7 +199,10 @@ static bool program_page(uint8_t page_index, const uint8_t *data /* 64 bytes */)
  * app_used_size bytes starting at APP_FLASH_PHYS_BASE, with the
  * 4-byte crc32 field inside the header (at byte offset
  * APP_HEADER_OFFSET+8 from the start of the app region) treated as
- * zero. */
+ * zero.
+ *
+ * CALLER MUST have validated app_used_size (see verify_app()); the
+ * final length below underflows for anything under APP_SIZE. */
 static uint32_t compute_app_crc(uint32_t app_used_size)
 {
 	const uint8_t *base = (const uint8_t *)(uintptr_t)APP_FLASH_PHYS_BASE;
@@ -226,9 +229,28 @@ static bool verify_app(void)
 	uint32_t crc = 0;
 	bool ok = false;
 
-	if (h.magic == APP_HEADER_MAGIC &&
-	    h.app_used_size >= APP_HEADER_SIZE &&
-	    h.app_used_size <= APP_SIZE) {
+	/*
+	 * app_used_size comes out of flash and is therefore attacker- and
+	 * corruption-controlled, so it must be validated before
+	 * compute_app_crc() uses it as a length.
+	 *
+	 * The trailer lives at a FIXED offset (APP_HEADER_OFFSET), and
+	 * compute_app_crc() walks base[0 .. crc_field_off), then four
+	 * zeroes, then base[crc_field_off+4 .. app_used_size). That last
+	 * length is computed as `app_used_size - (crc_field_off + 4)`,
+	 * which for anything smaller than APP_SIZE underflows to a value
+	 * near 2^32 -- the bootloader would then bit-bang a CRC32 over
+	 * ~4GiB starting past the end of flash, i.e. hang at boot, on
+	 * every boot, with no I2C and no watchdog. Recovery would need
+	 * SWD.
+	 *
+	 * Since APP_HEADER_OFFSET + APP_HEADER_SIZE == APP_SIZE, the only
+	 * size that can possibly be consistent with a trailer at that
+	 * fixed offset is APP_SIZE itself, which is also the only value
+	 * host/app_trailer.py ever writes and the only one its
+	 * verify_trailer() accepts. Require exactly that.
+	 */
+	if (h.magic == APP_HEADER_MAGIC && h.app_used_size == APP_SIZE) {
 		crc = compute_app_crc(h.app_used_size);
 		ok = (crc == h.app_crc32);
 	}
@@ -280,8 +302,10 @@ static void handle_cmd(uint8_t cmd)
 				     ((uint16_t)regs[BREG_PAGE_CSUM_HI] << 8);
 		/* Snapshot the page buffer first: the I2C interrupt stays
 		 * live throughout, so checksumming and programming must
-		 * both work from the same bytes. */
-		uint8_t buf[FLASH_PAGE_SIZE];
+		 * both work from the same bytes. 4-byte aligned because
+		 * program_page() loads the flash buffer with 32-bit stores
+		 * and this core traps on misaligned accesses. */
+		uint8_t buf[FLASH_PAGE_SIZE] __attribute__((aligned(4)));
 		bool ok = false;
 		memcpy(buf, (const void *)&regs[BREG_PAGE_BUF], FLASH_PAGE_SIZE);
 		if (crc16_compute(buf, FLASH_PAGE_SIZE) == want_csum)
