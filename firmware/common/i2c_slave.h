@@ -23,10 +23,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * Vendored verbatim from cnlohr/ch32v003fun's examples/i2c_slave/i2c_slave.h
- * (the ch32v003fun submodule pinned by this repository) so that
+ * Vendored from cnlohr/ch32v003fun's examples/i2c_slave/i2c_slave.h (the
+ * ch32v003fun submodule pinned by this repository) so that
  * firmware/bootloader and firmware/app do not depend on the examples/
  * tree of the submodule, only on ch32fun/ch32fun.h itself.
+ *
+ * LOCAL MODIFICATIONS vs upstream (keep this list up to date):
+ *
+ *  1. The write callback is now only invoked for transactions that
+ *     actually wrote register data. Upstream calls it from the STOPF
+ *     branch unconditionally, so a *master read* (which also ends in a
+ *     STOP, with position advanced past offset) is reported to the
+ *     application as if it were a register write of the same length.
+ *     For this firmware that is not cosmetic: the bootloader's
+ *     "was BREG_CMD written?" test would re-execute a stale command
+ *     just because a host read a block spanning register 0x03, and the
+ *     app's REG_BOOT test would likewise fire on a pure read.
+ *     `i2c_slave_state.writing` already tracked this upstream but was
+ *     never used; it is now the gate.
+ *
+ *  2. A write phase terminated by a repeated START (the combined
+ *     write-then-read that regmap-i2c / i2cget -c / I2C_RDWR issue) now
+ *     flushes the write callback from the ADDR branch, before offset /
+ *     position are reset for the read phase. Upstream silently dropped
+ *     the write callback in that case.
+ *
+ *  3. The error interrupt handler clears *every* error flag that
+ *     I2C_CTLR2_ITERREN can raise, not just BERR/ARLO/AF. Upstream
+ *     leaves OVR/PECERR/TIMEOUT/SMBALERT set, and because the handler
+ *     then returns with the interrupt condition still asserted the CPU
+ *     re-enters it forever -- a permanent lockup of the main loop,
+ *     which for the bootloader means a hung firmware upgrade.
  */
 
 #ifndef __I2C_SLAVE_H
@@ -133,6 +160,26 @@ void SetSecondaryI2CSlaveReadOnly(bool read_only) {
     i2c_slave_state.read_only2 = read_only;
 }
 
+/* Deliver the write callback for a completed write phase, if the
+ * transaction actually carried register data (as opposed to a bare
+ * pointer-set write, or a master read). Called both on STOP and on a
+ * repeated START, since a combined write-then-read transfer ends its
+ * write phase with the latter. */
+static void i2c_slave_flush_write(void) {
+    if (!i2c_slave_state.writing)
+        return;
+    i2c_slave_state.writing = false;
+    uint8_t reg = i2c_slave_state.offset;
+    uint8_t len = (uint8_t)(i2c_slave_state.position - i2c_slave_state.offset);
+    if (i2c_slave_state.address2matched) {
+        if (i2c_slave_state.write_callback2 != NULL)
+            i2c_slave_state.write_callback2(reg, len);
+    } else {
+        if (i2c_slave_state.write_callback1 != NULL)
+            i2c_slave_state.write_callback1(reg, len);
+    }
+}
+
 void I2C1_EV_IRQHandler(void) __attribute__((interrupt));
 void I2C1_EV_IRQHandler(void) {
     uint16_t STAR1, STAR2 __attribute__((unused));
@@ -140,6 +187,9 @@ void I2C1_EV_IRQHandler(void) {
     STAR2 = I2C1->STAR2;
 
     if (STAR1 & I2C_STAR1_ADDR) { // Start event
+        /* A repeated START ends any write phase that was in progress;
+         * report it before offset/position are reset below. */
+        i2c_slave_flush_write();
         i2c_slave_state.first_write = 1; // Next write will be the offset
         i2c_slave_state.position = i2c_slave_state.offset; // Reset position
         i2c_slave_state.address2matched = !!(STAR2 & I2C_STAR2_DUALF);
@@ -193,33 +243,29 @@ void I2C1_EV_IRQHandler(void) {
     }
 
     if (STAR1 & I2C_STAR1_STOPF) { // Stop event
+        // STOPF is cleared by a read of STAR1 (done above) followed by a
+        // write to CTLR1; this read-modify-write is that write.
         I2C1->CTLR1 &= ~(I2C_CTLR1_STOP); // Clear stop
-        if (i2c_slave_state.address2matched) {
-            if (i2c_slave_state.write_callback2 != NULL) {
-                i2c_slave_state.write_callback2(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
-            }
-        } else {
-            if (i2c_slave_state.write_callback1 != NULL) {
-                i2c_slave_state.write_callback1(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
-            }
-        }
+        i2c_slave_flush_write();
     }
 }
+
+/* Every error condition I2C_CTLR2_ITERREN can raise. All of these are
+ * rc_w0: writing the register back with the bit cleared clears it, and
+ * writing 1 to any other flag is ignored, so one store clears the lot. */
+#define I2C_SLAVE_ERR_FLAGS (I2C_STAR1_BERR | I2C_STAR1_ARLO | I2C_STAR1_AF | \
+                             I2C_STAR1_OVR | I2C_STAR1_PECERR)
 
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt));
 void I2C1_ER_IRQHandler(void) {
     uint16_t STAR1 = I2C1->STAR1;
 
-    if (STAR1 & I2C_STAR1_BERR) { // Bus error
-        I2C1->STAR1 &= ~(I2C_STAR1_BERR); // Clear error
-    }
-
-    if (STAR1 & I2C_STAR1_ARLO) { // Arbitration lost error
-        I2C1->STAR1 &= ~(I2C_STAR1_ARLO); // Clear error
-    }
-
-    if (STAR1 & I2C_STAR1_AF) { // Acknowledge failure
-        I2C1->STAR1 &= ~(I2C_STAR1_AF); // Clear error
+    /* Clear *all* pending error flags unconditionally. Leaving any one
+     * of them set (upstream ignores OVR and PECERR entirely) leaves the
+     * error interrupt permanently asserted, which re-enters this
+     * handler forever and starves the main loop. */
+    if (STAR1 & I2C_SLAVE_ERR_FLAGS) {
+        I2C1->STAR1 = (uint16_t)(STAR1 & ~I2C_SLAVE_ERR_FLAGS);
     }
 }
 
