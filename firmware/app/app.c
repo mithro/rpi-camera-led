@@ -186,31 +186,62 @@ static void led_pwm_init(void)
 {
 	RCC->APB2PCENR |= RCC_APB2Periph_TIM1 | RCC_APB2Periph_AFIO;
 
-	/* NOREMAP mapping already puts T1CH3N on PD1 -- no AFIO remap
-	 * needed (see tim1_pwm_complementary_outputs example in the
-	 * ch32v003fun submodule for the full remap table). */
-	funPinMode(PD1, GPIO_CFGLR_OUT_10Mhz_AF_PP);
-
 	RCC->APB2PRSTR |= RCC_APB2Periph_TIM1;
 	RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
 
-	TIM1->CTLR1 = 0;
-	TIM1->CTLR2 = 0;
+	TIM1->CTLR1 = TIM_ARPE; /* buffer ATRLR too */
+	TIM1->CTLR2 = 0;        /* OIS3N = 0: OC3N idles low when MOE = 0 */
 	TIM1->PSC = LED_PWM_PSC;
 	TIM1->ATRLR = LED_PWM_ATRLR;
-	TIM1->SWEVGR |= TIM_UG;
 
+	/* PWM mode 1 (OC3M = 110) with the compare value preloaded, so a
+	 * brightness change is applied at an update event rather than
+	 * mid-period. */
+	TIM1->CHCTLR2 |= TIM_OC3M_2 | TIM_OC3M_1 | TIM_OC3PE;
+
+	/*
+	 * CAREFUL, THIS COMBINATION IS LOAD-BEARING. We drive the LED gate
+	 * from OC3N (PD1), and the polarity of OC3N depends on whether the
+	 * *positive* channel OC3 is enabled as well:
+	 *
+	 *   CC3E=0, CC3NE=1  ->  OC3N =    OC3REF ^ CC3NP
+	 *   CC3E=1, CC3NE=1  ->  OC3N = (!(OC3REF)) ^ CC3NP   (complementary)
+	 *
+	 * With CC3E and CC3NP both set, OC3N = !(!OC3REF) = OC3REF, i.e.
+	 * active high: CH3CVR = 0 keeps OC3REF low for the whole period,
+	 * so brightness 0 is genuinely off. Dropping CC3E (PC3 is not
+	 * bonded out on the SOP-8 package, so it looks redundant) or
+	 * dropping CC3NP would invert the output and turn brightness 0
+	 * into full brightness. The dead-time generator is left at 0, so
+	 * OC3 and OC3N are exact complements.
+	 */
 	TIM1->CCER |= TIM_CC3E | TIM_CC3P | TIM_CC3NE | TIM_CC3NP;
-	TIM1->CHCTLR2 |= TIM_OC3M_1 | TIM_OC3M_2; /* PWM mode 1 */
+
 	TIM1->CH3CVR = 0;
+	TIM1->SWEVGR |= TIM_UG; /* load PSC/ATRLR/CH3CVR preloads */
 
 	TIM1->BDTR |= TIM_MOE;
 	TIM1->CTLR1 |= TIM_CEN;
+
+	/*
+	 * Only now hand PD1 to the timer. The NOREMAP mapping already puts
+	 * T1CH3N on PD1 -- no AFIO remap needed (see the
+	 * tim1_pwm_complementary_outputs example in the ch32v003fun
+	 * submodule for the full remap table). Doing this last means the
+	 * pin is never an alternate-function push-pull output while the
+	 * timer is still unconfigured; until then the gate is held low by
+	 * its 10k pulldown and the LEDs stay off.
+	 */
+	funPinMode(PD1, GPIO_CFGLR_OUT_10Mhz_AF_PP);
 }
 
 static void led_pwm_set(uint8_t brightness)
 {
-	TIM1->CH3CVR = brightness;
+	/* ATRLR = 255 means the period is 256 counts, so a compare value
+	 * of 255 is 255/256 = 99.6%, not fully on. Writing 256 (> ATRLR)
+	 * holds OC3REF active for the entire period, which is what a
+	 * brightness of 255 should mean. */
+	TIM1->CH3CVR = (brightness == 255) ? 256 : brightness;
 }
 
 /* ---------------------------------------------------------------- */
