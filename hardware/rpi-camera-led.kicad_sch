@@ -5988,7 +5988,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm (to camera)"
+		(property "Value" "FFC 15P 1.0mm top contact (to camera)"
 			(at 77.978 82.55 90)
 			(effects
 				(font
@@ -5996,7 +5996,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
+		(property "Footprint" "rpi-camera-led:JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -6023,7 +6023,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
+		(property "MPN" "JUSHUO AFA07-S15ECA-00 (LCSC C262742) / Amphenol SFW15R-2STE1LF"
 			(at 74.93 82.55 0)
 			(effects
 				(font
@@ -6170,7 +6170,7 @@
 				)
 			)
 		)
-		(property "Value" "FFC 15P 1.0mm (to Raspberry Pi)"
+		(property "Value" "FFC 15P 1.0mm bottom contact (to Raspberry Pi)"
 			(at 20.066 82.55 90)
 			(effects
 				(font
@@ -6205,7 +6205,7 @@
 				(hide yes)
 			)
 		)
-		(property "MPN" "JUSHUO AFA07-S15FCA-00 / Amphenol SFW15R-1STE1LF"
+		(property "MPN" "JUSHUO AFA07-S15FCA-00 (LCSC C262721) / Amphenol SFW15R-1STE1LF"
 			(at 22.86 82.55 0)
 			(effects
 				(font
