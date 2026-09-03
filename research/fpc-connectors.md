@@ -43,7 +43,7 @@ browser on 2026-09-01 (HTTP 200, 504 KB `application/pdf`). The per-part
 
 | Product ID | Manufacturer | JLCPCB unit @100 | Notes |
 |---|---|---|---|
-| [SFW15R-2STE1LF](https://jlcpcb.com/partdetail/AmphenolICC-SFW15R2STE1LF/C3167933) | Amphenol ICC | $0.8385 (only 44 in stock) | Dual-contact variant — the exact part used on Raspberry Pi boards |
+| [SFW15R-2STE1LF](https://jlcpcb.com/partdetail/AmphenolICC-SFW15R2STE1LF/C3167933) | Amphenol ICC | $0.8385 (only 44 in stock) | Top contact, slide lock — the exact part used on Raspberry Pi boards, and the reason a Pi camera cable is opposite-side |
 | [HC-FPC-1.0-15P-FHH20](https://jlcpcb.com/partdetail/HongCheng-HC_FPC_1_0_15PFHH20/C49166884) | Hong Cheng | $0.1647 (1,401 in stock) | Dual contact, flip lock — accepts the cable either way up |
 | [HC-FPC-1.0-15P-CXH25](https://jlcpcb.com/partdetail/HongCheng-HC_FPC_1_0_15PCXH25/C49166850) | Hong Cheng | $0.0777 (1,103 in stock) | Bottom contact, slide lock — cheapest 15P option on JLCPCB |
 | [1.0K-GT-15PB](https://jlcpcb.com/partdetail/HDGC-1_0K_GT15PB/C2915527) | HDGC | $0.1228 (2,998 in stock) | Vertical-entry slide lock, like the Pi's own connector orientation |
