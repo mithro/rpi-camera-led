@@ -19,10 +19,26 @@ Online](https://www.hqonline.com/)'s 600k+ in-stock inventory):
 
 [KiCad schematic](hardware/rpi-camera-led.kicad_sch) ([PDF](hardware/rpi-camera-led.pdf))
 for the interposer: two 15-pin FFC connectors passing the camera signals
-straight through, with a CH32V003J4M6 providing I2C-controlled camera GPIO,
-PWM illumination LEDs and an ambient light sensor. Regenerate with
-`uv run hardware/tools/gen_schematic.py` and verify (ERC + netlist vs design
-intent) with `uv run hardware/tools/check_schematic.py`.
+straight through, with a CH32V003A4M6 (SOP-16) providing I2C-controlled camera
+GPIO, PWM illumination LEDs and an ambient light sensor.
+
+Verify it (ERC plus a comparison of the exported netlist against the design
+intent) with `uv run hardware/tools/check_schematic.py`, and the board with
+`uv run hardware/tools/check_pcb.py`.
+
+J1 and J2 are the same bottom-contact part wired pin-for-pin, so a standard
+same-side Raspberry Pi camera cable works at both ends. They sit 180° apart on
+the board so their cables leave opposite edges, which puts J1 pad *k* opposite
+J2 pad *16−k* — `check_pcb.py` measures that facing alignment, since losing it
+to a stray drag puts a dogleg in every net. Note the consequence: pin *k* on
+one connector is wired to pin *k* on the other, but faces pin *16−k*, so the
+pass-through bus cannot be fifteen straight traces.
+
+The schematic is now maintained by hand in eeschema — the connections between
+adjacent parts are drawn as wires rather than left implicit in matching global
+labels. `hardware/tools/gen_schematic.py` is the generator that bootstrapped it
+and is kept in step with the design, but **running it overwrites the schematic**
+and would discard that manual wiring.
 
 ## Firmware
 

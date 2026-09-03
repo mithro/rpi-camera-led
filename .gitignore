@@ -1,2 +1,10 @@
 .worktrees/
 tmp/
+
+# KiCad working files: per-user state, editor locks, auto-backups and the
+# footprint cache are all regenerated and must never be committed.
+*.kicad_prl
+*.lck
+*-backups/
+fp-info-cache
+_autosave-*
