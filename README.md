@@ -15,7 +15,7 @@ PWM illumination LEDs and an ambient light reading.
 
 | 3D render, top | 3D render, bottom | Layout (copper, silk, outline) |
 |:--------------:|:-----------------:|:------------------------------:|
-| ![Interposer, front side](docs/img/board-3d-top.png) | ![Interposer, back side](docs/img/board-3d-bottom.png) | ![Interposer copper layout](docs/img/board-layout.svg) |
+| <img src="docs/img/board-3d-top.png" alt="Interposer, front side" width="300"> | <img src="docs/img/board-3d-bottom.png" alt="Interposer, back side" width="300"> | <img src="docs/img/board-layout.svg" alt="Interposer copper layout" width="300"> |
 
 25.0 × 23.9 mm, two layers, everything on the front. J1 (left) faces the
 Raspberry Pi and J2 (right) faces the camera; they sit 180° apart so the two
