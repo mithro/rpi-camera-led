@@ -46,11 +46,20 @@ slider, insert the cable and push it back, all at the same end. So the cable
 entry is at the latch end, away from the pads, and with each connector's
 housing flush against its board edge that entry points outward.
 
-The cable stubs are illustrative and are not part of the board: they exist
-only in a throwaway copy that the render script builds and deletes. Their
-16.00 × 0.30 mm section is the drawing's recommended FFC dimension, and the
-blue backing sits on top because these are the bottom-contact orientation,
-copper towards the board.
+The two cable stubs are drawn different ways up, and that is the point. J1 is
+bottom contact, so its cable presents bared copper *downwards* and shows you
+the blue backing; J2 is top contact, so its cable is the other way up and
+shows you the conductors. That flip is the whole reason for pairing an F part
+with an E part, and it is what lets both segments be ordinary Raspberry Pi
+camera cables — the same flip you can see in a real cable, blue stiffener on
+one face at one end, bared conductors on the other face at the other.
+
+The stubs are illustrative and are not part of the board: they exist only in a
+throwaway copy that the render script builds and deletes. Their 16.00 × 0.30 mm
+section is the drawing's recommended FFC dimension. The bared conductors and
+the backing are drawn a little longer than the 4 mm insertion depth so that a
+few millimetres of each stay visible outside the connector — otherwise the
+orientation they exist to show would be buried inside it.
 
 Regenerate the images with `uv run hardware/tools/render_board.py`, and the
 connector models with `uv run hardware/tools/gen_connector_model.py`. The

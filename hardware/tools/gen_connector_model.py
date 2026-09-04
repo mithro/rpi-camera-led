@@ -70,7 +70,11 @@ SLOT_DEPTH = 4.15       # from the latch face at y=+4.475, through into the body
 # ways, 0.30 +/- 0.03 thick.  The length is arbitrary -- just enough to run
 # clear of the board.
 CABLE_W, CABLE_T, CABLE_LEN = 16.00, 0.30, 22.0
-STIFFENER = (3.0, 9.0, 0.15)  # start, end, thickness -- the blue backing
+INSERT = 4.00        # how far the tip sits inside the connector
+EXPOSED = 6.00       # bared conductors at the tip, so ~2mm shows outside
+STIFF_LEN = 9.00     # blue backing, so ~5mm shows outside
+STIFF_T = 0.15
+COND_W, COND_T = 0.70, 0.04   # one bared conductor, on the pitch of the pads
 
 # Plan outlines, in KiCad *footprint* coordinates, taken from the F.Fab layer
 # of Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.
@@ -97,6 +101,7 @@ COLOURS = {
     "contacts": (0.75, 0.76, 0.78),
     "cable": (0.93, 0.91, 0.84),
     "stiffener": (0.16, 0.29, 0.55),
+    "conductors": (0.80, 0.66, 0.40),
 }
 
 VRML_SCALE = 2.54  # KiCad reads .wrl in 0.1 inch units; .step is plain mm
@@ -134,24 +139,43 @@ def build():
     return {"housing": housing, "latch": latch, "contacts": contacts}
 
 
-def build_cable():
+def build_cable(contacts_down):
     """An FFC cable stub, entering the slot and running away from the board.
 
-    Illustrative only -- it is not part of the connector and only goes into the
-    _with_cable models, which the README render uses to show which way the
-    cables leave.  The blue backing is on top because these are the
-    bottom-contact orientation: copper faces the board.
+    Illustrative only -- it is not part of the connector, and only goes into
+    the _with_cable models that the README renders use.
+
+    The two faces are not interchangeable, which is the whole point of pairing
+    a bottom-contact J1 with a top-contact J2, so the stub is built both ways
+    round: the bared conductors go on the face the connector's contacts are
+    on, and the blue backing goes on the other.  Both are at the same end, and
+    both are drawn long enough that a few millimetres stay visible outside the
+    connector -- otherwise the orientation they exist to show would be hidden
+    inside it.
     """
     z = SLOT_Z[0]
-    # Model y is negated, so the latch end is at -4.475 and "outwards" is -y.
-    cable = (cq.Workplane("XY")
-             .box(CABLE_W, CABLE_LEN, CABLE_T, centered=(True, False, False))
-             .translate((0, -(4.475 + CABLE_LEN) + 2.0, z)))
-    a, b, t = STIFFENER
+    tip = -4.475 + INSERT          # model y; the cable runs out towards -y
+    body = (cq.Workplane("XY")
+            .box(CABLE_W, CABLE_LEN + INSERT, CABLE_T, centered=(True, False, False))
+            .translate((0, tip - (CABLE_LEN + INSERT), z)))
+
+    if contacts_down:
+        cond_z, stiff_z = z - COND_T, z + CABLE_T
+    else:
+        cond_z, stiff_z = z + CABLE_T, z - STIFF_T
+
+    conductors = None
+    for i in range(15):
+        c = (cq.Workplane("XY")
+             .box(COND_W, EXPOSED, COND_T, centered=(True, False, False))
+             .translate((-7.0 + i, tip - EXPOSED, cond_z)))
+        conductors = c if conductors is None else conductors.union(c)
+
     stiffener = (cq.Workplane("XY")
-                 .box(CABLE_W, b - a, t, centered=(True, False, False))
-                 .translate((0, -(4.475 + b), z + CABLE_T)))
-    return {"cable": cable, "stiffener": stiffener}
+                 .box(CABLE_W, STIFF_LEN, STIFF_T, centered=(True, False, False))
+                 .translate((0, tip - STIFF_LEN, stiff_z)))
+
+    return {"cable": body, "stiffener": stiffener, "conductors": conductors}
 
 
 def write_vrml(path, parts):
@@ -192,11 +216,12 @@ def main():
         asm.add(wp, name=name, color=cq.Color(*COLOURS[name]))
 
     # The cable variant is WRL only: it exists to make a render legible, and a
-    # cable stub is not something anyone wants in an MCAD assembly.
-    with_cable = dict(parts)
-    with_cable.update(build_cable())
-
+    # cable stub is not something anyone wants in an MCAD assembly.  F is the
+    # lower-contact part, so its cable presents copper downwards; E is upper,
+    # so its cable is the other way up.
     for name in NAMES:
+        with_cable = dict(parts)
+        with_cable.update(build_cable(contacts_down="FCA" in name))
         step = OUT / f"{name}.step"
         wrl = OUT / f"{name}.wrl"
         cable_wrl = OUT / f"{name}_with_cable.wrl"

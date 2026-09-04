@@ -28,6 +28,7 @@ Usage (from the repository root):
 """
 
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -56,6 +57,14 @@ LAYERS = "F.Cu,B.Cu,F.SilkS,Edge.Cuts"
 CABLE_SIZE, CABLE_ZOOM = (1800, 1000), "0.46"
 # 315 rather than -45: kicad-cli's parser reads a leading "-" as a new flag.
 ISO_SIZE, ISO_ZOOM, ISO_ROTATE = (1600, 1100), "0.42", "315,0,45"
+
+FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+# Which end is which is not deducible from the picture, and neither is which
+# face of each cable carries the copper, so both are labelled.
+# Kept short: these sit at about a quarter scale in the README, so long lines
+# either collide in the middle or run off the edge.
+LABEL_L = "from Raspberry Pi\nJ1 bottom contact\ncopper faces down"
+LABEL_R = "to camera\nJ2 top contact\ncopper faces up"
 
 
 def run(args, **kw):
@@ -90,6 +99,29 @@ def render(out, extra, size, zoom, board):
     print(f"{out.relative_to(HW.parent)}  "
           f"({out.stat().st_size // 1024} KiB, {w} x {h} px)")
     return r
+
+
+def annotate(path, labels, size=62):
+    """Burn labels into a render.  Dark text with a light halo, so it stays
+    legible over both the pale background and the drop shadows.
+
+    The size looks absurd against the full-resolution image, but these are
+    embedded at about a quarter scale, so anything smaller is unreadable
+    where it actually gets read."""
+    if not shutil.which("magick"):
+        print("  (imagemagick not found, labels skipped)", file=sys.stderr)
+        return
+    stroke = max(6, size // 5)
+    args = ["magick", str(path), "-font", FONT, "-pointsize", str(size)]
+    for text, gravity, x, y in labels:
+        # Anchoring to a corner rather than absolute pixels keeps the two
+        # labels off each other and off the edges at any image size.
+        args += ["-gravity", gravity,
+                 "-stroke", "#f2f2f6", "-strokewidth", str(stroke),
+                 "-annotate", f"+{x}+{y}", text,
+                 "-stroke", "none", "-fill", "#16181d",
+                 "-annotate", f"+{x}+{y}", text]
+    run(args + [str(path)])
 
 
 def board_with_cables():
@@ -141,10 +173,16 @@ def main():
 
     cabled = board_with_cables()
     try:
-        render(IMG / "board-3d-cables.png", ["--side", "top"],
-               CABLE_SIZE, CABLE_ZOOM, cabled)
-        render(IMG / "board-3d-iso.png", ["--side", "top", "--rotate", ISO_ROTATE],
+        cables = IMG / "board-3d-cables.png"
+        render(cables, ["--side", "top"], CABLE_SIZE, CABLE_ZOOM, cabled)
+        annotate(cables, [(LABEL_L, "NorthWest", 34, 26),
+                          (LABEL_R, "NorthEast", 34, 26)])
+
+        iso = IMG / "board-3d-iso.png"
+        render(iso, ["--side", "top", "--rotate", ISO_ROTATE],
                ISO_SIZE, ISO_ZOOM, cabled)
+        annotate(iso, [(LABEL_L, "SouthWest", 30, 26),
+                       (LABEL_R, "NorthEast", 30, 26)], size=54)
     finally:
         cabled.unlink(missing_ok=True)
 
