@@ -23,23 +23,42 @@ cable segments leave opposite edges and the board drops into an existing cable
 run in line. The MCU is the SOIC-16 in the middle, the two white illumination
 LEDs and the phototransistor are along the top edge.
 
-**The layout is in progress**, in two respects.
+**The layout is in progress.** Eleven of the twenty footprints — C1, C2, J3,
+J4, Q1, R1–R4, R8 and R9 — are still parked outside the board outline, which is
+why they float around the board in the renders. The fifteen-way pass-through
+bus is routed; the rest is not. DRC reports 17 violations and 34 unconnected
+items.
 
-Eleven of the twenty footprints — C1, C2, J3, J4, Q1, R1–R4, R8 and R9 — are
-still parked outside the board outline, which is why they float around the
-board in the renders. The fifteen-way pass-through bus is routed; the rest is
-not. DRC currently reports 116 violations and 35 unconnected items.
+### How the cables run
 
-And both connectors are turned the wrong way round. Their backs are flush with
-the board edges (J1's housing ends at x = 20.000, J2's at x = 45.000, against
-an outline of 20.0–45.0), which puts both **mouths facing each other across the
-middle of the board**, 14.4 mm apart. The cables would have to enter from the
-board's interior, through the space the MCU occupies. Each needs rotating 180°
-so its mouth faces its own board edge — which moves the pads, so the routed bus
-has to be redone with it.
+| With cables fitted | Isometric |
+|:------------------:|:---------:|
+| <img src="docs/img/board-3d-cables.png" alt="Interposer with FFC cables in both connectors" width="460"> | <img src="docs/img/board-3d-iso.png" alt="Isometric view of the interposer with cables" width="420"> |
 
-Regenerate the three images above with `uv run hardware/tools/render_board.py`,
-and the connector models with `uv run hardware/tools/gen_connector_model.py`.
+Both cables enter from the **outside** edges and run away from the board in
+opposite directions, so the interposer drops into an existing cable run in
+line. That follows from where the cable entry is on this connector: the
+manufacturer's Section A‑A shows the solder tail stepping down and out at one
+end while the cable channel opens at the other, and the top view labels
+*Terminal* at one end and *Latch* at the other with the 5.30 mm housing
+between them. It is also the only way a slide lock can work — you pull the
+slider, insert the cable and push it back, all at the same end. So the cable
+entry is at the latch end, away from the pads, and with each connector's
+housing flush against its board edge that entry points outward.
+
+The cable stubs are illustrative and are not part of the board: they exist
+only in a throwaway copy that the render script builds and deletes. Their
+16.00 × 0.30 mm section is the drawing's recommended FFC dimension, and the
+blue backing sits on top because these are the bottom-contact orientation,
+copper towards the board.
+
+Regenerate the images with `uv run hardware/tools/render_board.py`, and the
+connector models with `uv run hardware/tools/gen_connector_model.py`. The
+render script refills the copper zones first, via the pcbnew Python module
+inside the KiCad snap, because `kicad-cli` has no zone-fill command and a
+stale pour renders as authoritatively as a fresh one — when this was first
+wired up the stored B.Cu pour was less than half its true area, and refilling
+it dropped DRC from 116 violations to 17.
 
 ### Connectors, and which cables fit
 

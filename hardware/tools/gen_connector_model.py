@@ -27,9 +27,16 @@ outline and whose land pattern was verified against that drawing pad for pad:
     colours                drawing note 1.1 "Housing: ... Color: natural",
                            note 1.2 "Latch: ... Color: black"
 
-The cable slot is the one invented feature: the drawing does not dimension
-it, so its height is representative.  It only cuts into the front face and
-does not change the outside envelope, which is what a clearance check needs.
+The cable enters at the LATCH end, not the terminal end.  Section A-A shows
+the solder tail stepping down and out one side while the cable channel opens
+the other, and the top view labels "Terminal" at one end and "Latch" at the
+other with the 5.30mm housing between them -- which is also how a slide lock
+has to work, since you pull the slider, insert the cable and push it back at
+the same end.  So the slot is cut from y=+4.475 inwards.
+
+Its height is the one invented dimension; the drawing does not give it.  The
+slot only eats into the latch end and does not change the outside envelope,
+which is what a clearance check needs.
 
 The two variants differ only in which side of the slot the contacts are on,
 which is internal, so both get the same body -- written out twice under the
@@ -54,9 +61,16 @@ NAMES = [
 
 HEIGHT = 2.50       # side view "2.50", and the H2.5 in the product name
 LATCH_TOP = 2.00    # the lock sits proud of the board but below the housing
-SLOT_Z = (0.60, 1.20)   # representative; the drawing does not dimension it
-SLOT_HALF_W = 7.70      # just wider than the 15 contacts, which span +/-7.0
-SLOT_DEPTH = 4.00       # into the housing from the front face
+SLOT_Z = (0.60, 0.95)   # representative; the drawing does not dimension it
+SLOT_HALF_W = 8.20      # a little wider than the 16.00mm cable
+SLOT_DEPTH = 4.15       # from the latch face at y=+4.475, through into the body
+
+# FFC cable stub, for the illustrative render only.  Width and thickness are
+# the drawing's RECOMMENDED FPC/FFC DIMENSION: (N+1) x 1.00 = 16.00 for 15
+# ways, 0.30 +/- 0.03 thick.  The length is arbitrary -- just enough to run
+# clear of the board.
+CABLE_W, CABLE_T, CABLE_LEN = 16.00, 0.30, 22.0
+STIFFENER = (3.0, 9.0, 0.15)  # start, end, thickness -- the blue backing
 
 # Plan outlines, in KiCad *footprint* coordinates, taken from the F.Fab layer
 # of Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.
@@ -81,6 +95,8 @@ COLOURS = {
     "housing": (0.85, 0.82, 0.72),
     "latch": (0.13, 0.13, 0.14),
     "contacts": (0.75, 0.76, 0.78),
+    "cable": (0.93, 0.91, 0.84),
+    "stiffener": (0.16, 0.29, 0.55),
 }
 
 VRML_SCALE = 2.54  # KiCad reads .wrl in 0.1 inch units; .step is plain mm
@@ -94,15 +110,18 @@ def to_model(pts):
 def build():
     housing = (cq.Workplane("XY").polyline(to_model(HOUSING)).close()
                .extrude(HEIGHT))
-    # Cable slot, cut back from the front face (which is at model y=+2.475).
+    latch = (cq.Workplane("XY").polyline(to_model(LATCH)).close()
+             .extrude(LATCH_TOP))
+
+    # Cable slot, cut in from the latch face (model y = -4.475) towards the
+    # terminals.  It passes through the latch and on into the housing, so both
+    # solids have to be cut.
     slot = (cq.Workplane("XY")
             .box(2 * SLOT_HALF_W, SLOT_DEPTH, SLOT_Z[1] - SLOT_Z[0],
                  centered=(True, False, False))
-            .translate((0, 2.475 - SLOT_DEPTH, SLOT_Z[0])))
+            .translate((0, -4.475, SLOT_Z[0])))
     housing = housing.cut(slot)
-
-    latch = (cq.Workplane("XY").polyline(to_model(LATCH)).close()
-             .extrude(LATCH_TOP))
+    latch = latch.cut(slot)
 
     contacts = None
     for i in range(15):
@@ -113,6 +132,26 @@ def build():
         contacts = c if contacts is None else contacts.union(c)
 
     return {"housing": housing, "latch": latch, "contacts": contacts}
+
+
+def build_cable():
+    """An FFC cable stub, entering the slot and running away from the board.
+
+    Illustrative only -- it is not part of the connector and only goes into the
+    _with_cable models, which the README render uses to show which way the
+    cables leave.  The blue backing is on top because these are the
+    bottom-contact orientation: copper faces the board.
+    """
+    z = SLOT_Z[0]
+    # Model y is negated, so the latch end is at -4.475 and "outwards" is -y.
+    cable = (cq.Workplane("XY")
+             .box(CABLE_W, CABLE_LEN, CABLE_T, centered=(True, False, False))
+             .translate((0, -(4.475 + CABLE_LEN) + 2.0, z)))
+    a, b, t = STIFFENER
+    stiffener = (cq.Workplane("XY")
+                 .box(CABLE_W, b - a, t, centered=(True, False, False))
+                 .translate((0, -(4.475 + b), z + CABLE_T)))
+    return {"cable": cable, "stiffener": stiffener}
 
 
 def write_vrml(path, parts):
@@ -152,13 +191,20 @@ def main():
     for name, wp in parts.items():
         asm.add(wp, name=name, color=cq.Color(*COLOURS[name]))
 
+    # The cable variant is WRL only: it exists to make a render legible, and a
+    # cable stub is not something anyone wants in an MCAD assembly.
+    with_cable = dict(parts)
+    with_cable.update(build_cable())
+
     for name in NAMES:
         step = OUT / f"{name}.step"
         wrl = OUT / f"{name}.wrl"
+        cable_wrl = OUT / f"{name}_with_cable.wrl"
         asm.save(str(step))
         write_vrml(wrl, parts)
-        print(f"{step.relative_to(HW.parent)}  ({step.stat().st_size // 1024} KiB)")
-        print(f"{wrl.relative_to(HW.parent)}  ({wrl.stat().st_size // 1024} KiB)")
+        write_vrml(cable_wrl, with_cable)
+        for f in (step, wrl, cable_wrl):
+            print(f"{f.relative_to(HW.parent)}  ({f.stat().st_size // 1024} KiB)")
 
     bb = parts["housing"].union(parts["latch"]).val().BoundingBox()
     print(f"\nenvelope  X {bb.xmin:+.3f}..{bb.xmax:+.3f}  "
