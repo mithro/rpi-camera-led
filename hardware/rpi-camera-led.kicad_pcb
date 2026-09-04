@@ -464,7 +464,7 @@
 			)
 		)
 	)
-	(footprint "Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
+	(footprint "rpi-camera-led:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "0a4ce589-6157-4caa-9111-e74a42d6fd8f")
 		(at 22.825 31.931 -90)
@@ -1014,7 +1014,7 @@
 			(uuid "d76d6d2e-9f2e-47fd-a912-453783b9c33b")
 		)
 		(embedded_fonts no)
-		(model "${KICAD9_3DMODEL_DIR}/Connector_FFC-FPC.3dshapes/JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.step"
+		(model "${KIPRJMOD}/rpi-camera-led.3dshapes/JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3120,7 +3120,7 @@
 			(uuid "d3d14a10-35ae-4c2b-84ba-1e597b01f585")
 		)
 		(embedded_fonts no)
-		(model "${KICAD9_3DMODEL_DIR}/Connector_FFC-FPC.3dshapes/JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.step"
+		(model "${KIPRJMOD}/rpi-camera-led.3dshapes/JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal.step"
 			(offset
 				(xyz 0 0 0)
 			)

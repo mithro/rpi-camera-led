@@ -6178,7 +6178,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
+		(property "Footprint" "rpi-camera-led:JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
 			(at 22.86 82.55 0)
 			(effects
 				(font

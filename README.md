@@ -23,15 +23,23 @@ cable segments leave opposite edges and the board drops into an existing cable
 run in line. The MCU is the SOIC-16 in the middle, the two white illumination
 LEDs and the phototransistor are along the top edge.
 
-**The layout is in progress.** Eleven of the twenty footprints — C1, C2, J3,
-J4, Q1, R1–R4, R8 and R9 — are still parked outside the board outline, which is
-why they float around the board in the renders. The fifteen-way pass-through
-bus is routed; the rest is not. DRC currently reports 116 violations and 35
-unconnected items.
+**The layout is in progress**, in two respects.
 
-Regenerate the three images above with `uv run hardware/tools/render_board.py`.
-The FFC connectors render as bare pads because KiCad ships no 3D model for the
-JUSHUO AFA07 series.
+Eleven of the twenty footprints — C1, C2, J3, J4, Q1, R1–R4, R8 and R9 — are
+still parked outside the board outline, which is why they float around the
+board in the renders. The fifteen-way pass-through bus is routed; the rest is
+not. DRC currently reports 116 violations and 35 unconnected items.
+
+And both connectors are turned the wrong way round. Their backs are flush with
+the board edges (J1's housing ends at x = 20.000, J2's at x = 45.000, against
+an outline of 20.0–45.0), which puts both **mouths facing each other across the
+middle of the board**, 14.4 mm apart. The cables would have to enter from the
+board's interior, through the space the MCU occupies. Each needs rotating 180°
+so its mouth faces its own board edge — which moves the pads, so the routed bus
+has to be redone with it.
+
+Regenerate the three images above with `uv run hardware/tools/render_board.py`,
+and the connector models with `uv run hardware/tools/gen_connector_model.py`.
 
 ### Connectors, and which cables fit
 
@@ -57,6 +65,18 @@ The two variants share one land pattern — verified against both JUSHUO drawing
 differs, and it is invisible on an assembled board, the distinction is called
 out in each symbol's value, in the MPN, and as a `BOTTOM CONTACT` / `TOP
 CONTACT` marker on the fab layer.
+
+Both footprints and their 3D models live in this repository, in
+`hardware/rpi-camera-led.pretty` and `hardware/rpi-camera-led.3dshapes`. KiCad's
+stock footprint references a STEP file for the JUSHUO AFA07 series that does not
+exist — not in the KiCad distribution and not in `kicad-packages3D` upstream,
+which ships no JUSHUO models at all. Third-party libraries have one, but under
+terms that forbid redistribution, so `hardware/tools/gen_connector_model.py`
+builds it from the manufacturer's published drawing instead: a 22.00 × 6.95 ×
+2.50 mm envelope matching the drawing's DIM D, the F.Fab outline and the side
+view's height, with the housing and latch coloured as the drawing's notes
+specify. Both STEP and WRL are generated, the latter in the 0.1-inch units
+KiCad expects.
 
 The pass-through bus is wired J1 pin *k* ↔ J2 pin *16−k*. That looks reversed
 but is exactly right: the two connectors are 180° apart, so J1 pad *k*

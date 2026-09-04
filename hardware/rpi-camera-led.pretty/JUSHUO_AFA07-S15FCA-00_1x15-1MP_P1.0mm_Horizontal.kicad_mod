@@ -1,9 +1,9 @@
-(footprint "JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
+(footprint "JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
 	(version 20241229)
 	(generator "kicad-footprint-generator")
 	(layer "F.Cu")
-	(descr "JUSHUO AFA07-S15ECA-00, 15-way 1.0mm-pitch FFC/FPC ZIF connector, right angle, slide lock, 2.5mm height, SMT. UPPER (top) contacts: the contacts are on the side of the slot AWAY from the PCB, so the cable must be inserted with its exposed copper facing UP, away from this board. This is the mirror-image variant of the stock Connector_FFC-FPC:JUSHUO_AFA07-S15FCA-00... footprint, whose part has LOWER (bottom) contacts. Per the JUSHUO series drawing the part number decodes as AFA07-S<ckts><plating><contacts>-A-00 with CONTACTS TYPE E:Upper, F:Lower. Both variants share one recommended PCB pattern layout (pitch 1.00, pads 0.60x1.80, mounting nails 2.60x3.00, circuit 1 to nail outer edge 3.65, overall 4.57), verified against both datasheets, so the copper here is identical to the FCA footprint and only the mated cable orientation differs. LCSC C262742. https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JUSHUO-AFA07-S15ECA-00_C262742.pdf")
-	(tags "jushuo fpc ffc zif upper contact top contact")
+	(descr "JUSHUO AFA07-S15FCA-00, 15-way 1.0mm-pitch FFC/FPC ZIF connector, right angle, slide lock, 2.5mm height, SMT. LOWER (bottom) contacts: the contacts are on the side of the slot TOWARDS the PCB, so the cable must be inserted with its exposed copper facing DOWN, towards this board. Identical to KiCad's stock Connector_FFC-FPC footprint of the same name except that the 3D model points at this project's own, because KiCad ships none for the JUSHUO AFA07 series. LCSC C262721. https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JUSHUO-AFA07-S15FCA-00_C262721.pdf")
+	(tags "jushuo fpc ffc zif lower contact bottom contact")
 	(property "Reference" "REF**"
 		(at 0 -5.48 0)
 		(layer "F.SilkS")
@@ -14,7 +14,7 @@
 			)
 		)
 	)
-	(property "Value" "JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal"
+	(property "Value" "JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal"
 		(at 0 5.68 0)
 		(layer "F.Fab")
 		(effects
@@ -291,7 +291,7 @@
 		)
 		(layer "F.Fab")
 	)
-	(fp_text user "TOP CONTACT"
+	(fp_text user "BOTTOM CONTACT"
 		(at 0 1.9 0)
 		(layer "F.Fab")
 		(effects
@@ -414,7 +414,7 @@
 		(roundrect_rratio 0.096154)
 	)
 	(embedded_fonts no)
-	(model "${KIPRJMOD}/rpi-camera-led.3dshapes/JUSHUO_AFA07-S15ECA-00_1x15-1MP_P1.0mm_Horizontal.step"
+	(model "${KIPRJMOD}/rpi-camera-led.3dshapes/JUSHUO_AFA07-S15FCA-00_1x15-1MP_P1.0mm_Horizontal.step"
 		(offset
 			(xyz 0 0 0)
 		)
