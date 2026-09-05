@@ -23,11 +23,30 @@ cable segments leave opposite edges and the board drops into an existing cable
 run in line. The MCU is the SOIC-16 in the middle, the two white illumination
 LEDs and the phototransistor are along the top edge.
 
+The outline is the Camera Module 2 board: 25.000 × 23.862 mm with 2.0 mm corner
+radii, and the same four Ø2.2 mm mounting holes, so the interposer takes the
+camera's screws. Those come straight off the official mechanical drawing
+([RP-008149-DS](https://pip.raspberrypi.com/categories/1205-drawings-and-schematics),
+RPI-CAM-V2_1): *"4x 2.2mm diameter holes"*, 2 mm in from each end of the 25 mm
+axis — a 21.0 mm pitch — and 12.5 mm apart on the other. `check_pcb.py` now
+verifies pitch and drill, because these went missing once already without
+anyone noticing.
+
 **The layout is in progress.** Eleven of the twenty footprints — C1, C2, J3,
 J4, Q1, R1–R4, R8 and R9 — are still parked outside the board outline, which is
 why they float around the board in the renders. The fifteen-way pass-through
-bus is routed; the rest is not. DRC reports 17 violations and 34 unconnected
+bus is routed; the rest is not. DRC reports 21 violations and 34 unconnected
 items.
+
+Four of those violations are the mounting holes, and they are a real conflict
+rather than noise. **All four holes land underneath a connector housing.** On
+the camera the 21.0 mm pitch runs between two edges that carry nothing, and its
+single FFC connector sits on a third; this board has a connector on *both* ends
+of that axis, each housing 5.30 mm deep, so the holes — 2 mm in from each end —
+sit under them. Nothing on the board is wrong in isolation; the camera's
+mounting pattern and two edge-mounted connectors simply cannot both fit on a
+25 mm span. Resolving it means giving something up: a longer board, connectors
+on the 25 mm edges instead, or mounting holes that no longer match the camera.
 
 ### How the cables run
 

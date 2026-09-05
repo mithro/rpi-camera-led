@@ -26,6 +26,13 @@ KICAD_CLI = "/snap/bin/kicad.kicad-cli"
 
 TOL = 0.001  # mm; anything above this is a real misalignment, not rounding
 
+# Raspberry Pi Camera Module 2 mounting pattern, from the official mechanical
+# drawing RP-008149-DS: "4x 2.2mm diameter holes", 2mm in from each end of the
+# 25mm axis (a 21.0mm pitch) and 12.5mm apart on the other.  These went missing
+# once already without anyone noticing, which is the whole reason they are
+# checked rather than eyeballed.
+MH_DX, MH_DY, MH_DRILL = 21.0, 12.5, 2.2
+
 
 def sexp_end(text, start):
     depth, in_str, i = 0, False, start
@@ -70,6 +77,22 @@ def footprints(text):
                 (ox + px * cos + py * sin, oy - px * sin + py * cos)
             )
         out[ref.group(1)] = pads
+    return out
+
+
+def mounting_holes(text):
+    """[(reference, x, y, drill diameter), ...] for the NPTH mounting holes."""
+    out = []
+    for m in re.finditer(r'\(footprint "([^"]+)"', text):
+        block = text[m.start():sexp_end(text, m.start())]
+        if "MountingHole" not in m.group(1):
+            continue
+        ref = re.search(r'\(property "Reference" "([^"]*)"', block)
+        at = re.search(r"\(at ([-\d.]+) ([-\d.]+)", block)
+        drill = re.search(r"\(drill ([-\d.]+)\)", block)
+        if ref and at:
+            out.append((ref.group(1), float(at.group(1)), float(at.group(2)),
+                        float(drill.group(1)) if drill else None))
     return out
 
 
@@ -122,7 +145,30 @@ def main():
             ok = False
             print(f"  NOT MIRRORED: differ by {abs(d1 - d2):.4f} mm")
 
-    # 3. Board still matches the schematic, and report the DRC tally.
+    # 3. The camera's mounting pattern is still present and still correct.
+    holes = mounting_holes(text)
+    print(f"mounting holes: {len(holes)}")
+    if len(holes) != 4:
+        ok = False
+        print("  EXPECTED 4 (the Camera Module 2 pattern)")
+    else:
+        xs = sorted({round(h[1], 3) for h in holes})
+        ys = sorted({round(h[2], 3) for h in holes})
+        drills = {h[3] for h in holes}
+        if len(xs) == 2 and len(ys) == 2:
+            dx, dy = xs[1] - xs[0], ys[1] - ys[0]
+            print(f"  pitch {dx:.3f} x {dy:.3f} mm, drill {sorted(drills)} mm")
+            if abs(dx - MH_DX) > TOL or abs(dy - MH_DY) > TOL:
+                ok = False
+                print(f"  WRONG PITCH: expected {MH_DX} x {MH_DY} mm")
+        else:
+            ok = False
+            print(f"  NOT A RECTANGULAR PATTERN: x={xs} y={ys}")
+        if drills != {MH_DRILL}:
+            ok = False
+            print(f"  WRONG DRILL: expected {MH_DRILL} mm, found {sorted(drills)}")
+
+    # 4. Board still matches the schematic, and report the DRC tally.
     rpt = HW / "drccheck.json"
     subprocess.run([KICAD_CLI, "pcb", "drc", "--format", "json",
                     "-o", str(rpt), str(PCB)], capture_output=True, text=True)
