@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
-"""Put the Raspberry Pi camera board's mounting holes on the interposer.
-
-The interposer uses the Camera Module 2 outline, so it should take the same
-screws.  From the official mechanical drawing (RP-008149-DS, RPI-CAM-V2_1):
-
-    "4x 2.2mm diameter holes"
-    "4x 2.0mm radius corners"
-    25.000 x 23.862 mm board
-
-with the holes 2 mm in from each end of the 25 mm axis -- a 21.0 mm pitch --
-and at 2.0 and 14.5 mm from one end of the 23.862 mm axis, a 12.5 mm pitch.
-That second pair is asymmetric on the camera because its FFC connector eats
-the far edge; here the pair is centred instead, which is what this board
-carried before the holes were lost.
+"""Put the supplied Raspberry Pi Camera v3 model's mounting holes on the interposer.
 
 Runs inside the KiCad snap, for the pcbnew module:
     hardware/tools/run_in_kicad.sh python3 hardware/tools/add_mounting_holes.py
@@ -34,12 +21,16 @@ PCB = os.path.join(HW, "rpi-camera-led.kicad_pcb")
 LIB = "/snap/kicad/current/usr/share/kicad/footprints/MountingHole.pretty"
 FP = "MountingHole_2.2mm_M2"
 
-BX0, BY0, BW, BH = 20.0, 20.0, 25.000, 23.862
-CX, CY = BX0 + BW / 2.0, BY0 + BH / 2.0
-MH_DX, MH_DY = 21.0, 12.5          # camera pitches, 25mm axis x 23.862mm axis
-
-HOLES = [(CX + sx * MH_DX / 2.0, CY + sy * MH_DY / 2.0)
-         for sx in (-1, 1) for sy in (-1, 1)]
+# The project-local 3MF places the optical axis at its XY origin and the
+# mounting holes at (+/-10, 0) and (+/-10, 12.5) mm. The assembly is rotated
+# 180 degrees and centered on the interposer's 32.5, 31.931 mm aperture.
+APERTURE_X, APERTURE_Y = 32.5, 31.931
+MH_DX, MH_DY = 20.0, 12.5
+HOLES = [
+    (APERTURE_X + sx * MH_DX / 2.0, APERTURE_Y + dy)
+    for sx in (-1, 1)
+    for dy in (0.0, -MH_DY)
+]
 
 
 def main():

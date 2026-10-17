@@ -61,9 +61,10 @@ BOR — the only external parts required are supply decoupling capacitors.
 
 ## Recommendation
 
-For an I2C peripheral device on a camera LED board, **CH32V003J4M6** (SOP-8)
-or **PY32F002AW15U6TR** (QFN-16) are the sweet spot at ~$0.15–0.21 on both
-services with five-digit JLCPCB stock. Choose PY32F002A if standard SWD
-programming matters; choose CH32V003 for the larger community (ch32fun etc.)
-and easier-to-solder SOP-8. Note the CH32V003's I2C slave mode is
-well-supported in ch32fun examples.
+For the current camera-LED interposer, **CH32V003A4M6 (SOP-16)** is selected:
+its separate GPIO pins let firmware use PC1/PC2 for I2C, PC3 for LED PWM,
+PC4 for the light sensor, PD1 for SWIO, and distinct Pi/camera GPIO paths.
+The cheaper CH32V003J4M6 SOP-8 remains an option for designs that fit its
+smaller package's pin and bonding constraints. For a new design where standard
+SWD matters, consider **PY32F002AW15U6TR** (QFN-16); choose CH32V003 for the
+larger ch32fun ecosystem and its single-wire SWIO debug.

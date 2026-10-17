@@ -1,19 +1,14 @@
 /*
- * CH32V003J4M6 camera-LED controller -- application.
+ * CH32V003A4M6 camera-LED controller -- application.
  *
  * See firmware/README.md for the full pin map and register map. Short
  * version:
  *
- *   PD6 (bonded w/ PA1)  -> CAM_IO0, driven output or tri-state input
- *   PA2                  -> CAM_IO1, driven output or tri-state input
+ *   PD5 / PD6            -> Pi-side GPIO0/GPIO1 input sense
+ *   PA1 / PA2            -> camera-side GPIO0/GPIO1 drive or high-Z
  *   PC1/PC2               -> I2C1 SDA/SCL (slave, address I2C_SLAVE_ADDR)
  *   PC4                   -> ADC1 channel A2, phototransistor light sensor
- *   PD1 (bonded w/ PD4,PD5) -> TIM1 CH3N hardware PWM, white LED gate
- *
- * PA1, PD4 and PD5 are the *unused* halves of pins that are bonded to
- * two ports inside the SOP-8 package (see README.md, "Hardware") and
- * are kept as floating inputs for the whole lifetime of this program
- * so they never fight the pin they're bonded to.
+ *   PC3                   -> TIM1 CH3 hardware PWM, white LED gate
  */
 
 #include "ch32fun.h"
@@ -46,19 +41,18 @@ static void onWrite(uint8_t reg, uint8_t length)
 }
 
 /* ---------------------------------------------------------------- */
-/* GPIO passthrough / drive (CAM_IO0 = PD6, CAM_IO1 = PA2)           */
+/* GPIO passthrough: PD5/PD6 sense Pi; PA1/PA2 drive camera side.   */
 /* ---------------------------------------------------------------- */
 
-static void update_gpio_channel(uint32_t pin, uint8_t bit)
+static void update_gpio_channel(uint32_t pi_pin, uint32_t camera_pin, uint8_t bit)
 {
 	bool copy_en = regs[REG_CTRL] & bit;
 	bool oe = regs[REG_GPIO_OE] & bit;
 	bool out_level = regs[REG_GPIO_OUT] & bit;
 
-	/* Copy mode always wins: force tri-state so the Pi's own GPIO
-	 * state (through the 10k) reaches the camera unmodified. */
+	funPinMode(pi_pin, GPIO_CFGLR_IN_FLOAT);
 	if (copy_en || !oe) {
-		funPinMode(pin, GPIO_CFGLR_IN_FLOAT);
+		funPinMode(camera_pin, GPIO_CFGLR_IN_FLOAT);
 	} else {
 		/* Load OUTDR *before* enabling the output driver. OUTDR
 		 * keeps whatever was last written to it (0 out of reset),
@@ -69,14 +63,14 @@ static void update_gpio_channel(uint32_t pin, uint8_t bit)
 		 * the pin is still a floating input has no effect on the
 		 * pin (OUTDR only selects the pull direction in the
 		 * pull-up/pull-down input modes, which this is not). */
-		funDigitalWrite(pin, out_level ? FUN_HIGH : FUN_LOW);
-		funPinMode(pin, GPIO_CFGLR_OUT_10Mhz_PP);
+		funDigitalWrite(camera_pin, out_level ? FUN_HIGH : FUN_LOW);
+		funPinMode(camera_pin, GPIO_CFGLR_OUT_10Mhz_PP);
 	}
 
 	/* Live pin read: reflects the Pi's passed-through state when
 	 * tri-stated (copy mode or OE=0), or the value we're driving
 	 * when OE=1 and copy mode is off -- see README.md. */
-	if (funDigitalRead(pin))
+	if (funDigitalRead(pi_pin))
 		regs[REG_GPIO_IN] |= bit;
 	else
 		regs[REG_GPIO_IN] &= ~bit;
@@ -173,7 +167,7 @@ static void light_poll(void)
 }
 
 /* ---------------------------------------------------------------- */
-/* LED PWM (PD1 = TIM1 CH3N, NOREMAP mapping)                        */
+/* LED PWM (PC3 = TIM1 CH3, NOREMAP mapping)                         */
 /* ---------------------------------------------------------------- */
 
 /* PSC=186 (divide by 187) with ATRLR=255 (256 counts) gives
@@ -190,7 +184,7 @@ static void led_pwm_init(void)
 	RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
 
 	TIM1->CTLR1 = TIM_ARPE; /* buffer ATRLR too */
-	TIM1->CTLR2 = 0;        /* OIS3N = 0: OC3N idles low when MOE = 0 */
+	TIM1->CTLR2 = 0;
 	TIM1->PSC = LED_PWM_PSC;
 	TIM1->ATRLR = LED_PWM_ATRLR;
 
@@ -199,23 +193,8 @@ static void led_pwm_init(void)
 	 * mid-period. */
 	TIM1->CHCTLR2 |= TIM_OC3M_2 | TIM_OC3M_1 | TIM_OC3PE;
 
-	/*
-	 * CAREFUL, THIS COMBINATION IS LOAD-BEARING. We drive the LED gate
-	 * from OC3N (PD1), and the polarity of OC3N depends on whether the
-	 * *positive* channel OC3 is enabled as well:
-	 *
-	 *   CC3E=0, CC3NE=1  ->  OC3N =    OC3REF ^ CC3NP
-	 *   CC3E=1, CC3NE=1  ->  OC3N = (!(OC3REF)) ^ CC3NP   (complementary)
-	 *
-	 * With CC3E and CC3NP both set, OC3N = !(!OC3REF) = OC3REF, i.e.
-	 * active high: CH3CVR = 0 keeps OC3REF low for the whole period,
-	 * so brightness 0 is genuinely off. Dropping CC3E (PC3 is not
-	 * bonded out on the SOP-8 package, so it looks redundant) or
-	 * dropping CC3NP would invert the output and turn brightness 0
-	 * into full brightness. The dead-time generator is left at 0, so
-	 * OC3 and OC3N are exact complements.
-	 */
-	TIM1->CCER |= TIM_CC3E | TIM_CC3P | TIM_CC3NE | TIM_CC3NP;
+	TIM1->CCER &= ~(TIM_CC3P | TIM_CC3NE | TIM_CC3NP);
+	TIM1->CCER |= TIM_CC3E;
 
 	TIM1->CH3CVR = 0;
 	TIM1->SWEVGR |= TIM_UG; /* load PSC/ATRLR/CH3CVR preloads */
@@ -223,16 +202,7 @@ static void led_pwm_init(void)
 	TIM1->BDTR |= TIM_MOE;
 	TIM1->CTLR1 |= TIM_CEN;
 
-	/*
-	 * Only now hand PD1 to the timer. The NOREMAP mapping already puts
-	 * T1CH3N on PD1 -- no AFIO remap needed (see the
-	 * tim1_pwm_complementary_outputs example in the ch32v003fun
-	 * submodule for the full remap table). Doing this last means the
-	 * pin is never an alternate-function push-pull output while the
-	 * timer is still unconfigured; until then the gate is held low by
-	 * its 10k pulldown and the LEDs stay off.
-	 */
-	funPinMode(PD1, GPIO_CFGLR_OUT_10Mhz_AF_PP);
+	funPinMode(PC3, GPIO_CFGLR_OUT_10Mhz_AF_PP);
 }
 
 static void led_pwm_set(uint8_t brightness)
@@ -256,12 +226,8 @@ int main(void)
 
 	funGpioInitAll();
 
-	/* Defensively (re)assert the bonded-but-unused halves of pin 1
-	 * and pin 8 as floating inputs, even though this is also the
-	 * post-reset default -- see the file header comment. */
-	funPinMode(PA1, GPIO_CFGLR_IN_FLOAT);
-	funPinMode(PD4, GPIO_CFGLR_IN_FLOAT);
 	funPinMode(PD5, GPIO_CFGLR_IN_FLOAT);
+	funPinMode(PD6, GPIO_CFGLR_IN_FLOAT);
 
 	/* CAM_IO0/CAM_IO1 start tri-stated (OE defaults to 0 in regs). */
 
@@ -283,8 +249,8 @@ int main(void)
 		regs[REG_FW_VERSION] = APP_FW_VERSION_VALUE;
 		regs[REG_RESERVED_07] = 0;
 
-		update_gpio_channel(PD6, GPIO_CH0);
-		update_gpio_channel(PA2, GPIO_CH1);
+		update_gpio_channel(PD5, PA1, GPIO_CH0);
+		update_gpio_channel(PD6, PA2, GPIO_CH1);
 
 		light_poll();
 

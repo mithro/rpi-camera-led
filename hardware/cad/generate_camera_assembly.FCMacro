@@ -1,0 +1,128 @@
+from pathlib import Path
+import os
+import subprocess
+import sys
+
+import FreeCAD as App
+import MeshPart
+import Part
+
+ROOT = Path(__file__).resolve().parents[2]
+BOARD_STEP = ROOT / "tmp" / "manufacturing" / "rpi-camera-led-board.step"
+PCB = ROOT / "hardware" / "rpi-camera-led.kicad_pcb"
+CAMERA_STEP = ROOT / "hardware" / "cad" / "models" / "Raspberry Pi Camera v3.step"
+OUT = ROOT / "tmp" / "cad"
+OUT.mkdir(parents=True, exist_ok=True)
+STEP_DIR = OUT / "components"
+STEP_DIR.mkdir(parents=True, exist_ok=True)
+
+sys.path.insert(0, str(ROOT / "hardware" / "tools"))
+from kicad_cli import KICAD_CLI
+
+model_dirs = [
+    os.environ.get("KICAD10_3DMODEL_DIR"),
+    os.environ.get("KICAD9_3DMODEL_DIR"),
+    str(Path(KICAD_CLI).resolve().parent.parent / "share" / "kicad" / "3dmodels"),
+    "/usr/share/kicad/3dmodels",
+    "/snap/kicad/current/share/kicad/3dmodels",
+    "/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels",
+]
+model_dir = next((path for path in model_dirs if path and Path(path).is_dir()), None)
+if model_dir is None:
+    raise FileNotFoundError(f"KiCad STEP model directory not found: {model_dir}")
+
+component_groups = {
+    "Connectors": "J1,J2,J3,J4",
+    "IC": "U1",
+    "LEDs": "D1,D2",
+    "Sensor": "Q2",
+    "MOSFET": "Q1",
+    "Passives": "C1,C2,R1,R2,R3,R4,R5,R6,R7,R8,R9",
+}
+
+doc = App.newDocument("RpiCameraLedAssembly")
+board_shape = Part.read(str(BOARD_STEP))
+board_outline_shape = Part.read(str(BOARD_STEP))
+board_box = board_outline_shape.BoundBox
+print("Interposer board substrate bounds:", board_box)
+
+interposer = doc.addObject("PartDesign::Feature", "Interposer")
+interposer.Label = "RPI Camera LED interposer (KiCad STEP)"
+interposer.Shape = board_shape
+component_objects = []
+for category, references in component_groups.items():
+    component_step = STEP_DIR / f"{category}.step"
+    subprocess.run(
+        [
+            KICAD_CLI,
+            "pcb",
+            "export",
+            "step",
+            "--force",
+            "--component-filter",
+            references,
+            "--define-var",
+            f"KICAD9_3DMODEL_DIR={model_dir}",
+            "--define-var",
+            f"KICAD10_3DMODEL_DIR={model_dir}",
+            "-o",
+            str(component_step),
+            str(PCB),
+        ],
+        check=True,
+    )
+    exported = Part.read(str(component_step))
+    parts = []
+    for child in exported.childShapes():
+        box = child.BoundBox
+        if (
+            abs(box.XLength - board_box.XLength) < 0.01
+            and abs(box.YLength - board_box.YLength) < 0.01
+            and abs(box.ZLength - board_box.ZLength) < 0.01
+        ):
+            continue
+        parts.append(child)
+    if not parts:
+        raise RuntimeError(f"KiCad exported no component geometry for {category}")
+    component = doc.addObject("PartDesign::Feature", f"Components{category}")
+    component.Label = f"Populated components: {category}"
+    component.Shape = Part.makeCompound(parts)
+    component_objects.append(component)
+
+board_bottom = board_box.ZMin
+if not CAMERA_STEP.is_file():
+    raise FileNotFoundError(f"Camera STEP model not found: {CAMERA_STEP}")
+cx, cy = 32.5, -25.681
+camera_shape = Part.read(str(CAMERA_STEP))
+camera_shape.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), 180)
+camera_shape.translate(App.Vector(cx, cy, board_bottom - 5.0))
+camera = doc.addObject("PartDesign::Feature", "CameraModule")
+camera.Label = "Raspberry Pi Camera v3 (faceted 3MF-derived STEP)"
+camera.Shape = camera_shape
+print("Camera model bounds in assembly:", camera_shape.BoundBox)
+
+pi_cable = doc.addObject("PartDesign::Feature", "PiFFC")
+pi_cable.Label = "Raspberry Pi FFC path (illustrative)"
+pi_cable.Shape = Part.makeBox(
+    12.0, 15.0, 0.35, App.Vector(-2.5, cy - 7.5, board_bottom + 1.8)
+)
+
+doc.recompute()
+doc.saveAs(str(OUT / "rpi-camera-led-assembly.FCStd"))
+Part.export(
+    [interposer, *component_objects, camera, pi_cable],
+    str(OUT / "rpi-camera-led-assembly.step"),
+)
+
+objects = [
+    interposer, *component_objects, camera, pi_cable,
+]
+for obj in objects:
+    mesh = MeshPart.meshFromShape(
+        Shape=obj.Shape, LinearDeflection=0.08, AngularDeflection=0.15,
+        Relative=False,
+    )
+    mesh.write(str(OUT / f"{obj.Name}.stl"))
+
+print("Assembly written to", OUT)
+App.closeDocument(doc.Name)

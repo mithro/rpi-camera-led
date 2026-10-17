@@ -1,9 +1,10 @@
 # RPi Camera LED
 
 An interposer for the Raspberry Pi camera flex cable (15 pin, 1.0 mm pitch FPC).
-It sits in the middle of the cable, passes all fifteen camera signals straight
-through, and adds a CH32V003A4M6 that gives the Pi I2C-controlled camera GPIO,
-PWM illumination LEDs and an ambient light reading.
+It connects the Pi and camera, passes the camera bus through, and adds a
+CH32V003A4M6 for I2C-controlled GPIO 11/12, PWM illumination LEDs, and ambient
+light sensing. GPIO 11/12 use 10 kOhm couplers so the MCU can sense Pi-side
+levels or drive the camera-side signals.
 
 ## Hardware
 
@@ -17,36 +18,71 @@ PWM illumination LEDs and an ambient light reading.
 |:--------------:|:-----------------:|:------------------------------:|
 | <img src="docs/img/board-3d-top.png" alt="Interposer, front side" width="300"> | <img src="docs/img/board-3d-bottom.png" alt="Interposer, back side" width="300"> | <img src="docs/img/board-layout.svg" alt="Interposer copper layout" width="300"> |
 
-25.0 × 23.9 mm, two layers, everything on the front. J1 (left) faces the
-Raspberry Pi and J2 (right) faces the camera; they sit 180° apart so the two
-cable segments leave opposite edges and the board drops into an existing cable
-run in line. The MCU is the SOIC-16 in the middle, the two white illumination
-LEDs and the phototransistor are along the top edge.
+The routed interposer is 46.0 × 43.0 mm, two layers, with components on both
+sides. J1 faces the Raspberry Pi and J2 faces the camera; they are opposite
+edge-mounted so the two cable segments leave in line. The 11 mm lens aperture
+is centered on the intended camera optical axis, and the illumination LEDs sit
+around the aperture on the target-facing side. A fit-check using the supplied
+Raspberry Pi Camera v3 3MF model guided the redesign: the 11 mm lens aperture
+is aligned to the model's optical axis, and the four interposer holes now
+match its 20.0 × 12.5 mm mounting pattern. The model's hole-pattern center is
+offset 6.25 mm from the optical axis, so the holes are intentionally
+asymmetric about the aperture. The LED row was moved clear of the relocated
+mounting holes.
 
-The outline is the Camera Module 2 board: 25.000 × 23.862 mm with 2.0 mm corner
-radii, and the same four Ø2.2 mm mounting holes, so the interposer takes the
-camera's screws. Those come straight off the official mechanical drawing
-([RP-008149-DS](https://pip.raspberrypi.com/categories/1205-drawings-and-schematics),
-RPI-CAM-V2_1): *"4x 2.2mm diameter holes"*, 2 mm in from each end of the 25 mm
-axis — a 21.0 mm pitch — and 12.5 mm apart on the other. `check_pcb.py` now
-verifies pitch and drill, because these went missing once already without
-anyone noticing.
+The four 2.2 mm mounting holes follow the supplied Raspberry Pi Camera v3
+3MF mesh; see [hardware/cad/README.md](hardware/cad/README.md) for the model
+datum and conversion details. The wider outline clears the connectors while
+allowing the interposer to mount over the camera; the 6.05 mm-radius two-layer
+copper keepout around the lens opening preserves copper-to-aperture edge
+clearance. `check_pcb.py` asserts connector alignment and the camera-model
+hole coordinates, pitch, and drill.
+The 4-pin Qwiic/JST-SH connector (J3) is also edge-facing, with its cable entry
+at the lower board edge (J3 at x=17.5 mm, y=53.7 mm, rotated 180°) so the plug
+can be inserted without obstructing the camera or its flex. `check_pcb.py`
+asserts this edge orientation and the J3 pad map as well as the FFC alignment.
 
-**The layout is in progress.** Eleven of the twenty footprints — C1, C2, J3,
-J4, Q1, R1–R4, R8 and R9 — are still parked outside the board outline, which is
-why they float around the board in the renders. The fifteen-way pass-through
-bus is routed; the rest is not. DRC reports 21 violations and 34 unconnected
-items.
+**Routing and design checks pass:** KiCad DRC reports zero violations and
+zero unconnected items, schematic ERC is clean, and the netlist matches the
+design checker. The three camera differential pairs have these PCB-track
+lengths (pads/connectors excluded):
 
-Four of those violations are the mounting holes, and they are a real conflict
-rather than noise. **All four holes land underneath a connector housing.** On
-the camera the 21.0 mm pitch runs between two edges that carry nothing, and its
-single FFC connector sits on a third; this board has a connector on *both* ends
-of that axis, each housing 5.30 mm deep, so the holes — 2 mm in from each end —
-sit under them. Nothing on the board is wrong in isolation; the camera's
-mounting pattern and two edge-mounted connectors simply cannot both fit on a
-25 mm span. Resolving it means giving something up: a longer board, connectors
-on the 25 mm edges instead, or mounting holes that no longer match the camera.
+| Pair | P length | N length | Intra-pair mismatch |
+|---|---:|---:|---:|
+| CSI data 0 | 35.5720 mm | 35.0432 mm | 0.5288 mm |
+| CSI data 1 | 35.8428 mm | 35.3092 mm | 0.5336 mm |
+| CSI clock | 36.9758 mm | 38.2571 mm | 1.2813 mm |
+
+The data-pair averages are 2.3089 mm and 2.0405 mm shorter than the clock-pair
+average. At a rough FR-4 propagation estimate of 6–7 ps/mm, those differences
+correspond to about 12–16 ps; this is not a MIPI compliance claim. The actual
+stackup/impedance and camera/host timing budget have not been verified.
+Confirm the chosen fabricator's stackup and electrical rules before calling
+the interposer signal-integrity qualified.
+
+The Gerber/drill, position, sourced BOM and DRC archive is generated by
+`uv run hardware/tools/export_manufacturing.py` into
+`tmp/manufacturing/manufacturing.zip`. Export is blocked by any DRC errors or
+unconnected items. The package is complete for review; verify vendor-specific
+rules, current component availability, and the physical camera/FFC fit before
+ordering. Production board identity/revision and license/attribution silkscreen
+still need to be added and audited.
+
+The camera/interposer stack model and test-render instructions are in
+[hardware/cad/README.md](hardware/cad/README.md). The supplied camera model is
+included as a faceted STEP converted from its 3MF source; the Raspberry Pi FFC
+path remains illustrative.
+
+| Populated interposer | Camera/interposer stackup concept |
+|:--------------------:|:---------------------------------:|
+| <img src="docs/img/camera-interposer-populated.png" alt="Populated camera interposer" width="440"> | <img src="docs/img/camera-interposer-stackup.png" alt="Supplied Raspberry Pi Camera v3 model and interposer stackup" width="440"> |
+
+The fit-check image shows the routed board with the supplied model's optical
+axis and all four mounting holes aligned. This is a model-based fit check, not
+physical verification; confirm the camera revision and mounting dimensions
+before fabrication.
+
+<img src="docs/img/raspberry-pi-camera-v3-fit-check.png" alt="Top-down fit check of the supplied Raspberry Pi Camera v3 model, showing the lens axis offset from the interposer aperture" width="600">
 
 ### How the cables run
 
@@ -125,13 +161,13 @@ view's height, with the housing and latch coloured as the drawing's notes
 specify. Both STEP and WRL are generated, the latter in the 0.1-inch units
 KiCad expects.
 
-The pass-through bus is wired J1 pin *k* ↔ J2 pin *16−k*. That looks reversed
-but is exactly right: the two connectors are 180° apart, so J1 pad *k*
-physically faces J2 pad *16−k*, and joining the pads that face each other is
-both the straight route and the electrically transparent one — the board
-behaves as a splice in the middle of one continuous cable.
-`check_pcb.py` measures that facing alignment as a number, because losing it to
-a stray drag puts a dogleg in all fifteen nets and is invisible by eye.
+The direct pass-through signals are wired J1 pin *k* ↔ J2 pin *16−k*. That
+looks reversed but is exactly right: the two connectors are 180° apart, so J1
+pad *k* physically faces J2 pad *16−k*. Camera GPIO 11/12 are the exception:
+their Pi-side and camera-side nets are coupled through R6/R7 (10 kOhm) so U1
+can sense the Pi and override the camera-side level. `check_pcb.py` measures
+connector alignment as a number, because losing it to a stray drag puts a
+dogleg in the direct pass-through nets and is invisible by eye.
 
 ### Verifying
 
@@ -140,18 +176,10 @@ uv run hardware/tools/check_schematic.py   # ERC + netlist vs design intent
 uv run hardware/tools/check_pcb.py         # connector alignment + DRC parity
 ```
 
-`check_schematic.py` currently **fails**: its expected-netlist table still
-describes the older pin-for-pin bus, and four issues from the last eeschema
-session are open — U1 pin 13 is unconnected, SWIO and CAM_IO1 have been merged
-onto one net, I2C is landed on pins that cannot carry it on this package (the
-CH32V003 SOP-16 reaches the peripheral only on pins 1 and 2, since both AFIO
-remaps need PD0 or PC5 and the package bonds out neither), and four no-connect
-flags dangle.
-
-The schematic is maintained by hand in eeschema — connections between adjacent
-parts are drawn as wires rather than left implicit in matching global labels.
-`hardware/tools/gen_schematic.py` is the generator that bootstrapped it, but
-**running it overwrites the schematic** and would discard that manual wiring.
+`check_schematic.py` checks ERC and expected connectivity. The final design
+uses the CH32V003A4M6 SOP-16 pin map; firmware build verification is documented
+in [firmware/README.md](firmware/README.md). Hardware bring-up has not yet
+been performed.
 
 ## Firmware
 
@@ -163,8 +191,9 @@ a Linux-friendly SMBus register map at address 0x42. Builds with
 (`git submodule update --init`, then `make` in `firmware/bootloader` and
 `firmware/app`).
 
-The firmware still targets the older pin map and needs updating to match the
-current schematic.
+The firmware pin map matches the current schematic and both bootloader and
+application build with the documented open-source RISC-V toolchain. The
+firmware has not been flashed or tested on physical hardware.
 
 ## Research
 
@@ -181,3 +210,14 @@ Online](https://www.hqonline.com/)'s 600k+ in-stock inventory):
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
+
+## Manufacturing outputs
+
+Run `uv run hardware/tools/export_manufacturing.py` to write Gerbers, drill
+files, positions, sourced/JLCPCB BOMs and `manufacturing.zip` into
+`tmp/manufacturing/`. It checks DRC before export and reports parts missing an
+LCSC number; the current design passes DRC and the BOM has no missing LCSC
+codes. `--allow-incomplete` permits a review-only export and labels it
+`NOT_FOR_FABRICATION.txt`—never send that package to a board house.
+`kicad-cli` is found automatically; set `KICAD_CLI` to override. See issue #1
+for the remaining production qualification work.

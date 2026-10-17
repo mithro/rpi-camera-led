@@ -3,7 +3,7 @@
 # requires-python = ">=3.9"
 # dependencies = []
 # ///
-"""Host-side tool for the CH32V003J4M6 camera-LED controller.
+"""Host-side tool for the CH32V003A4M6 camera-LED controller.
 
 Talks to the chip over /dev/i2c-* (Linux i2c-dev, e.g. a Raspberry Pi's
 I2C bus that the camera connector's I2C is wired to). No third-party
@@ -16,7 +16,7 @@ Python; no packages need installing).
 *** UNTESTED ON REAL HARDWARE. *** This has only been exercised
 against the register maps and protocol implemented in
 firmware/app/app.c and firmware/bootloader/bootloader.c by reading the
-source; there is no CH32V003J4M6 board available in this environment
+source; there is no CH32V003A4M6 board available in this environment
 to verify timing, electrical behaviour, or actual I2C transaction
 success/failure against silicon. Treat every command's behaviour as a
 best-effort implementation of the documented protocol (firmware/README.md)

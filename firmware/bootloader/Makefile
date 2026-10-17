@@ -1,4 +1,4 @@
-# Bootloader image for the CH32V003J4M6 camera-LED controller.
+# Bootloader image for the CH32V003A4M6 camera-LED controller.
 #
 # Uses ch32v003fun's build machinery for the compiler/prefix
 # auto-detection, but overrides LINKER_SCRIPT with our own

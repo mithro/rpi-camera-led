@@ -1,5 +1,5 @@
 /*
- * Shared flash/RAM layout constants for the CH32V003J4M6 camera-LED
+ * Shared flash/RAM layout constants for the CH32V003A4M6 camera-LED
  * controller firmware. Included by BOTH the bootloader and the
  * application so the two independently-linked images agree on where
  * everything lives. Also mirrored (by hand, keep in sync) in

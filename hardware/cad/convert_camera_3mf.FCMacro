@@ -1,0 +1,101 @@
+from pathlib import Path
+import xml.etree.ElementTree as ET
+import zipfile
+
+import FreeCAD as App
+import Mesh
+import Part
+
+ROOT = Path(__file__).resolve().parents[2]
+MODEL = ROOT / "hardware" / "cad" / "models" / "Raspberry Pi Camera v3.3mf"
+OUTPUT = ROOT / "hardware" / "cad" / "models" / "Raspberry Pi Camera v3.step"
+
+CORE_NS = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+PROD_NS = "http://schemas.microsoft.com/3dmanufacturing/production/2015/06"
+NS = {"c": CORE_NS, "p": PROD_NS}
+UNIT_SCALE = {
+    "micron": 0.001,
+    "millimeter": 1.0,
+    "centimeter": 10.0,
+    "inch": 25.4,
+    "foot": 304.8,
+    "meter": 1000.0,
+}
+
+with zipfile.ZipFile(str(MODEL)) as archive:
+    model_path = next(
+        (name for name in archive.namelist() if name.lower() == "3d/3dmodel.model"),
+        None,
+    )
+    if model_path is None:
+        raise ValueError(f"No 3D model part found in {MODEL}")
+    root = ET.fromstring(archive.read(model_path))
+
+scale = UNIT_SCALE.get(root.get("unit", "millimeter"))
+if scale is None:
+    raise ValueError(f"Unsupported 3MF unit: {root.get('unit')}")
+
+items = root.findall("./c:build/c:item", NS)
+if len(items) != 1:
+    raise ValueError(f"Expected one build item, found {len(items)}")
+if items[0].get("transform"):
+    raise ValueError("3MF build transforms are not supported by this converter")
+
+objects = {
+    item.get("id"): item
+    for item in root.findall("./c:resources/c:object", NS)
+}
+obj = objects.get(items[0].get("objectid"))
+mesh_element = obj.find("c:mesh", NS) if obj is not None else None
+if mesh_element is None:
+    raise ValueError("Expected the build item to reference a mesh object")
+
+vertices = [
+    App.Vector(
+        float(vertex.get("x")) * scale,
+        float(vertex.get("y")) * scale,
+        float(vertex.get("z")) * scale,
+    )
+    for vertex in mesh_element.findall("./c:vertices/c:vertex", NS)
+]
+triangles = mesh_element.findall("./c:triangles/c:triangle", NS)
+if not vertices or not triangles:
+    raise ValueError("The 3MF mesh has no vertices or triangles")
+
+mesh = Mesh.Mesh()
+for triangle in triangles:
+    indices = [int(triangle.get(name)) for name in ("v1", "v2", "v3")]
+    if any(index < 0 or index >= len(vertices) for index in indices):
+        raise ValueError(f"Triangle references an invalid vertex: {indices}")
+    mesh.addFacet(*(vertices[index] for index in indices))
+
+shape = Part.Shape()
+shape.makeShapeFromMesh(mesh.Topology, 0.01 * scale)
+if shape.isNull() or not shape.Faces:
+    raise RuntimeError("FreeCAD failed to create STEP geometry from the 3MF mesh")
+if len(shape.Shells) != 1 or not shape.Shells[0].isClosed():
+    raise RuntimeError("The 3MF mesh did not convert to one closed shell")
+shape = Part.makeSolid(shape.Shells[0])
+if not shape.isValid():
+    raise RuntimeError("The faceted camera solid is invalid")
+
+doc = App.newDocument("RaspberryPiCameraV3")
+camera = doc.addObject("PartDesign::Feature", "Camera")
+camera.Label = "Raspberry Pi Camera v3 (faceted 3MF conversion)"
+camera.Shape = shape
+doc.recompute()
+Part.export([camera], str(OUTPUT))
+App.closeDocument(doc.Name)
+
+print(
+    "Wrote",
+    OUTPUT,
+    "from",
+    len(vertices),
+    "vertices and",
+    len(triangles),
+    "facets; solid volume:",
+    shape.Volume,
+    "mm^3; bounds:",
+    mesh.BoundBox,
+)

@@ -1,5 +1,5 @@
 /*
- * CH32V003J4M6 camera-LED controller -- fail-safe I2C bootloader.
+ * CH32V003A4M6 camera-LED controller -- fail-safe I2C bootloader.
  *
  * Runs first on every boot (it occupies flash 0x0000-0x0FFF, the
  * hardware always starts executing at address 0). It NEVER erases or

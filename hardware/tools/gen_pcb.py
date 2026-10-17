@@ -11,7 +11,10 @@ reached by entering the snap's own runtime::
 
 Placement only -- track routing is done interactively in the pcbnew GUI and is
 never rewritten by this script.  Re-running it regenerates the board from
-scratch, so run it only when the placement itself needs to change.
+scratch. This is the legacy narrow-board bootstrap; it does not reproduce the
+current widened/routed design. ``redesign_board.py`` applies the current
+outline and placement, but also clears all copper, so reroute and refill before
+manufacturing after using either generator.
 """
 
 import os
@@ -66,7 +69,7 @@ PLACE = {
     "J2": (42.175, 31.931, 90),
 
     "J4": (29.40, 21.80, 90),      # SWD header (through hole) above the bus
-    "U1": (32.50, 26.60, 0),       # CH32V003J4M6, SOIC-8
+    "U1": (32.50, 26.60, 0),       # CH32V003A4M6, SOIC-16
     "R6": (28.30, 24.70, 90),      # PI_IO0 <-> CAM_IO0 coupler
     "R7": (28.30, 27.20, 90),      # PI_IO1 <-> CAM_IO1 coupler
     "C1": (28.30, 29.60, 90),      # 100 nF, beside U1 VDD/VSS
@@ -77,8 +80,8 @@ PLACE = {
     "Q1": (30.80, 31.40, 0),       # AO3400A low-side LED switch
     "R8": (34.50, 31.40, 0),       # LED_GATE pull-down
     "R9": (34.50, 32.80, 0),       # 47k phototransistor load
-    "R3": (29.20, 34.10, 0),       # 10R to D1
-    "R4": (35.00, 34.10, 0),       # 10R to D2
+    "R3": (29.20, 34.10, 0),       # 47R to D1
+    "R4": (35.00, 34.10, 0),       # 47R to D2
     "D1": (29.45, 36.20, 0),       # illumination LED (left)
     "D2": (35.00, 36.20, 0),       # illumination LED (right)
     "Q2": (32.15, 35.40, 90),      # phototransistor, between the two LEDs

@@ -1,4 +1,4 @@
-# Application image for the CH32V003J4M6 camera-LED controller.
+# Application image for the CH32V003A4M6 camera-LED controller.
 #
 # Same approach as ../bootloader/Makefile: reuse ch32fun.mk for
 # toolchain detection but supply our own app.ld (12KiB-16B flash

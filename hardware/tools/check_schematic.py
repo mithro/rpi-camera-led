@@ -17,7 +17,7 @@ from pathlib import Path
 
 HW = Path(__file__).resolve().parent.parent
 SCH = HW / "rpi-camera-led.kicad_sch"
-KICAD_CLI = "/snap/bin/kicad.kicad-cli"
+from kicad_cli import KICAD_CLI
 
 # J1 and J2 are the same bottom-contact part wired pin-for-pin, so the board is
 # transparent to a standard same-side camera cable at both ends.  The two sit
@@ -25,26 +25,26 @@ KICAD_CLI = "/snap/bin/kicad.kicad-cli"
 # faces pad 16-k and the pass-through nets cannot all be straight traces.
 EXPECTED = {
     "GND": {("J1", "1"), ("J1", "4"), ("J1", "7"), ("J1", "10"),
-            ("J2", "1"), ("J2", "4"), ("J2", "7"), ("J2", "10"),
+            ("J2", "6"), ("J2", "9"), ("J2", "12"), ("J2", "15"),
             ("U1", "14"), ("C1", "2"), ("C2", "2"), ("Q1", "2"),
             ("R8", "2"), ("R9", "2"), ("J3", "1"), ("J4", "3")},
-    "3V3": {("J1", "15"), ("J2", "15"), ("U1", "15"), ("C1", "1"), ("C2", "1"),
+    "3V3": {("J1", "15"), ("J2", "1"), ("U1", "15"), ("C1", "1"), ("C2", "1"),
             ("R1", "1"), ("R2", "1"), ("R3", "1"), ("R4", "1"),
             ("J3", "2"), ("J4", "1"), ("Q2", "1")},
-    "SDA": {("J1", "14"), ("J2", "14"), ("U1", "1"), ("R1", "2"), ("J3", "3")},
-    "SCL": {("J1", "13"), ("J2", "13"), ("U1", "2"), ("R2", "2"), ("J3", "4")},
-    "CAM_D0_N": {("J1", "2"), ("J2", "2")},
-    "CAM_D0_P": {("J1", "3"), ("J2", "3")},
-    "CAM_D1_N": {("J1", "5"), ("J2", "5")},
-    "CAM_D1_P": {("J1", "6"), ("J2", "6")},
+    "SDA": {("J1", "14"), ("J2", "2"), ("U1", "1"), ("R1", "2"), ("J3", "3")},
+    "SCL": {("J1", "13"), ("J2", "3"), ("U1", "2"), ("R2", "2"), ("J3", "4")},
+    "CAM_D0_N": {("J1", "2"), ("J2", "14")},
+    "CAM_D0_P": {("J1", "3"), ("J2", "13")},
+    "CAM_D1_N": {("J1", "5"), ("J2", "11")},
+    "CAM_D1_P": {("J1", "6"), ("J2", "10")},
     "CAM_CK_N": {("J1", "8"), ("J2", "8")},
-    "CAM_CK_P": {("J1", "9"), ("J2", "9")},
+    "CAM_CK_P": {("J1", "9"), ("J2", "7")},
     # U1 straddles each GPIO channel rather than sharing a pin with the link:
     # PD5/PD6 watch the Pi side, PA1/PA2 drive the camera side.
-    "PI_IO0": {("J1", "11"), ("R6", "1"), ("U1", "10")},
-    "PI_IO1": {("J1", "12"), ("R7", "1"), ("U1", "9")},
-    "CAM_IO0": {("J2", "11"), ("U1", "12"), ("R6", "2")},
-    "CAM_IO1": {("J2", "12"), ("U1", "13"), ("R7", "2")},
+    "PI_IO0": {("J1", "11"), ("R6", "1"), ("U1", "9")},
+    "PI_IO1": {("J1", "12"), ("R7", "1"), ("U1", "10")},
+    "CAM_IO0": {("J2", "5"), ("U1", "12"), ("R6", "2")},
+    "CAM_IO1": {("J2", "4"), ("U1", "13"), ("R7", "2")},
     # SOP-16 frees the LED from the debug pin: PD1 is now programming only,
     # and PC3 (TIM1 CH3) drives the gate resistor.
     "SWIO": {("U1", "7"), ("J4", "2")},
@@ -96,10 +96,16 @@ def main():
     run(KICAD_CLI, "sch", "export", "netlist", "-o", str(net_path), str(SCH))
     text = net_path.read_text()
     nets = {}
-    blocks = re.split(r'\(net \(code "\d+"\) \(name "', text)[1:]
-    for block in blocks:
-        name = block[: block.index('"')]
-        pins = set(re.findall(r'\(node \(ref "([^"]+)"\) \(pin "([^"]+)"\)', block))
+    blocks = re.findall(
+        r'\(net\s+\(code "\d+"\)\s+\(name "([^"]+)"\)(.*?)(?=\n\s*\(net\s+\(code|\Z)',
+        text,
+        re.DOTALL,
+    )
+    for name, block in blocks:
+        pins = set(re.findall(
+            r'\(node\s+\(ref "([^"]+)"\)\s+\(pin "([^"]+)"\)',
+            block,
+        ))
         nets[name.lstrip("/")] = pins
     net_path.unlink()
 

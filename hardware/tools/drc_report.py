@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from kicad_cli import KICAD_CLI
+
 REPO = Path(__file__).resolve().parent.parent.parent
 PCB = REPO / "hardware" / "rpi-camera-led.kicad_pcb"
 OUT = REPO / "tmp" / "drc.json"
@@ -12,7 +14,7 @@ OUT = REPO / "tmp" / "drc.json"
 
 def main():
     OUT.parent.mkdir(exist_ok=True)
-    subprocess.run(["/snap/bin/kicad.kicad-cli", "pcb", "drc",
+    subprocess.run([KICAD_CLI, "pcb", "drc",
                     "--severity-error", "--format", "json", "-o", str(OUT), str(PCB)],
                    check=True, stdout=subprocess.DEVNULL)
     d = json.loads(OUT.read_text())

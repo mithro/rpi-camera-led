@@ -1,6 +1,6 @@
-# CH32V003J4M6 camera-LED controller firmware
+# CH32V003A4M6 camera-LED controller firmware
 
-Firmware for the CH32V003J4M6 (RISC-V, SOP-8) sitting on the Raspberry
+Firmware for the CH32V003A4M6 (RISC-V, SOP-16) sitting on the Raspberry
 Pi camera interposer board in this repository. It:
 
 1. drives or tri-states the two camera-side GPIO pins,
@@ -16,35 +16,41 @@ Everything is controlled by a Raspberry Pi over I2C, using a plain
 `i2c-tools` (`i2cget`/`i2cset`/`i2ctransfer`) and kernel `regmap-i2c`
 drivers out of the box.
 
-**Build status: builds clean with fully open-source tooling (see
-"Build" below). Hardware status: UNTESTED. Nobody has flashed this
-onto a real board or scoped a single pin -- see "Known risks" and
-"What is untested" at the end of this document.**
+**Build status: both firmware images build successfully with the
+open-source toolchain described below. Hardware status: UNTESTED.
+Nobody has flashed this onto a real board or scoped a single pin -- see
+"Known risks" and "What is untested" at the end of this document.**
 
 ## Hardware
 
-(As specified by the person who wrote this brief, verified against the
-WCH datasheet.) The chip is a CH32V003J4M6 in an SOP-8 package. Several
-package pins are bonded to two GPIO ports simultaneously inside the
-package, which the firmware must account for:
+(CH32V003A4M6, SOIC/SOP-16; pin numbers follow the SOP-16 column in the
+WCH CH32V003 datasheet.) Unlike the smaller package, these package pins
+do not bond multiple GPIO ports together:
 
-| Package pin | Port(s)         | Net       | Notes |
-|-------------|------------------|-----------|-------|
-| 1           | PD6 **and** PA1  | CAM_IO0   | Drives camera GPIO 11. Also wired through a 10k (R6) to the Pi's CAM_IO0: when the CH32 pin is an input, the Pi's state passes through to the camera and is readable by the CH32; when the CH32 drives it, it overrides the Pi (0.33mA through the 10k). |
-| 3           | PA2              | CAM_IO1   | Same scheme via R7 (10k) to the Pi's CAM_IO1. |
-| 5           | PC1              | I2C1_SDA  | CH32 is an I2C **slave** on the Pi camera bus (100-400kHz), shared with the camera sensor (0x10/0x1A/0x36) and EEPROMs (0x50/0x54). |
-| 6           | PC2              | I2C1_SCL  | |
-| 7           | PC4              | ADC A2    | Phototransistor, 47k to GND; more light = higher voltage. |
-| 8           | PD1, PD4, PD5    | LED gate  | PD1 drives an N-MOSFET gate (100R series, 10k pulldown) switching two white LEDs, via TIM1 channel 3 complementary output (T1CH3N). PD1/SWIO is also the programming pin -- LEDs flicker during flashing, by design. |
+| Package pin | Port / function | Net | Notes |
+|-------------|-----------------|-----|-------|
+| 1 | PC1 / I2C1 SDA | SDA | I2C slave on the shared Pi camera bus. |
+| 2 | PC2 / I2C1 SCL | SCL | |
+| 3 | PC3 / TIM1 CH3 | LED_PWM | Drives the LED MOSFET gate through its series resistor. |
+| 4 | PC4 / ADC A2 | LIGHT_SENSE | Phototransistor input; more light raises the sensed voltage. |
+| 5 | PC6 | NC | Unused. |
+| 6 | PC7 | NC | Unused. |
+| 7 | PD1 / SWIO | SWIO | Programming/debug interface; not used for LED PWM. |
+| 8 | PD4 | NC | Unused. |
+| 9 | PD5 | PI_IO0 | Samples the Pi-side GPIO0 signal. |
+| 10 | PD6 | PI_IO1 | Samples the Pi-side GPIO1 signal. |
+| 11 | PD7 / NRST | NC | Left unconnected; may act as reset depending on option bytes. |
+| 12 | PA1 | CAM_IO0 | Drives or tri-states camera GPIO 11; R6 (10k) links to PI_IO0. |
+| 13 | PA2 | CAM_IO1 | Drives or tri-states camera GPIO 12; R7 (10k) links to PI_IO1. |
+| 14 | VSS | GND | |
+| 15 | VDD | 3V3 | |
+| 16 | PC0 | NC | Unused. |
 
-Because pins 1 and 8 are bonded to more than one port, the firmware
-configures the *unused* half of each bonded pin as a floating input
-for its entire lifetime, so it never fights the pin it's bonded to:
-PA1 (pin 1) and PD4/PD5 (pin 8) are always `GPIO_CFGLR_IN_FLOAT`. This
-is also the chip's power-on-reset default for every GPIO, so the
-bootloader (which never touches these pins) is safe by construction,
-and the app explicitly re-asserts it at startup as a defensive measure
-(`app/app.c`, `main()`).
+When the camera-side GPIO output is tri-stated, the Pi-side state passes
+through the 10k link and can be sampled by PD5/PD6. When the controller
+drives PA1/PA2, the 10k resistor limits contention current. PD1 is
+reserved for SWIO; PC3/TIM1 CH3 provides LED PWM, so programming does
+not intentionally drive the LED gate.
 
 I2C slave address: **0x42** (`I2C_SLAVE_ADDR` in `common/layout.h`),
 chosen to avoid the camera (0x10/0x1A/0x36) and EEPROMs (0x50/0x54)
@@ -326,28 +332,26 @@ target) in addition to the linker's own `--print-memory-usage` report,
 using `objcopy -O ihex`/`-O binary` for the standard `.elf`/`.bin`/
 `.hex` outputs.
 
-Measured sizes (this repository, current sources, gcc 14.2.0):
-
-```
-Bootloader:  2248 / 4096  bytes flash (54.9%),  144 / 2032 bytes RAM
-App:         2020 / 12272 bytes flash (16.5%),  184 / 2032 bytes RAM
-```
-
-(App flash budget is 12272, not 12288 -- the linker script reserves
+The app flash budget is 12272, not 12288 -- the linker script reserves
 the last 16 bytes for the trailer that `app/make_trailer.py` patches
 in after linking, so the *build itself* fails loudly if application
 code would collide with the trailer, rather than silently producing a
-corrupt image.)
+corrupt image.
+
+Verified build sizes with GCC 10.2.0:
+
+```
+Bootloader: 2304 / 4096 bytes flash, 140 / 2032 bytes RAM
+App:        2172 / 12272 bytes flash, 188 / 2032 bytes RAM
+```
 
 ## Flashing
 
 This firmware has not been flashed to real hardware (see "What is
 untested" below). `make flash` in either `bootloader/` or `app/` uses
 `minichlink` (built from the `ch32v003fun` submodule, also fully
-open-source) over a WCH-LinkE-compatible SWD programmer connected to
-the shared SWIO/PD1 pin. Because PD1 is also the LED PWM pin, the LEDs
-will flicker while flashing the app image -- this is expected and
-harmless.
+open-source) over a WCH-LinkE-compatible programmer connected to the
+SWIO/PD1 pin.
 
 ```sh
 cd firmware/bootloader && make flash   # minichlink -w bootloader.bin flash        (0x08000000)
@@ -480,11 +484,11 @@ to try first if bring-up goes badly, so nobody has to rediscover them.
 
 ## What is untested
 
-**Nothing in this firmware has been run on real CH32V003J4M6 silicon,
+**Nothing in this firmware has been run on real CH32V003A4M6 silicon,
 or on any hardware at all.** Specifically untested:
 
 - Whether the pin/peripheral configuration (GPIO alternate functions,
-  ADC channel mapping, TIM1 NOREMAP CH3N routing to PD1) actually
+  ADC channel mapping, TIM1 CH3 routing to PC3) actually
   produces the described electrical behaviour on this specific
   package/board.
 - Actual I2C bus timing and electrical behaviour of any kind -- see

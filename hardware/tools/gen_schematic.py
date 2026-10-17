@@ -199,8 +199,8 @@ place(
     "MCU_WCH_RiscV:CH32V003AxMx", "U1", "CH32V003A4M6",
     150, 60,
     {"1": "SDA", "2": "SCL", "3": "LED_PWM", "4": "LIGHT_SENSE",
-     "5": None, "6": None, "7": "SWIO", "8": None, "9": None,
-     "10": "CAM_IO0", "11": None, "12": None, "13": "CAM_IO1",
+     "5": None, "6": None, "7": "SWIO", "8": None, "9": "PI_IO0",
+     "10": "PI_IO1", "11": None, "12": "CAM_IO0", "13": "CAM_IO1",
      "14": "GND", "15": "3V3", "16": None},
     ref_at=(-4, -16), value_at=(-14, 20),
     footprint="Package_SO:SOIC-16_3.9x9.9mm_P1.27mm",
@@ -275,10 +275,11 @@ text("R6/R7 couple the Pi's CAM_IO pins to the camera pins/U1: with U1\n"
      108, 164)
 text("SOP-16 bonds no two ports to one pin, so PD1/SWIO is programming only\n"
      "and PC3/T1CH3 drives the LED gate: no LED flicker while flashing firmware.\n"
-     "PC6, PC7, PD4, PD5, PD7/NRST, PA1 and PC0 are spare.",
+     "PC6, PC7, PD4 and PC0 are unused. PD7 remains unconnected because it\n"
+     "may act as NRST until the RST_MODE option byte is configured.",
      95, 193)
-text("LED current is set by R3/R4 against the 3V3 rail (about 30-40mA each\n"
-     "with Vf=2.9V). Total draw comes from the Pi camera 3V3 supply - keep\n"
+text("LED current is set by R3/R4 = 47R against 3V3 (about 8-15mA each\n"
+     "for Vf=2.9-2.6V at 100% duty). Total draw comes from Pi camera 3V3 - keep\n"
      "the duty/current within the Pi's camera connector budget.",
      183, 32)
 text("All parts chosen for JLCPCB / NextPCB Rev0 assembly; see\n"

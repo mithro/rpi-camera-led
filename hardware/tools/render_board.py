@@ -18,15 +18,14 @@ Rendering a stale pour is worse than not rendering at all, because it looks
 authoritative -- when this was first written the stored B.Cu pour was less
 than half its true area.
 
-The 3D views are deliberately zoomed out far enough to include every
-footprint, not just the ones inside the board outline -- eleven parts are
-still sitting off the board while the layout is in progress, and cropping
-them out of the README would make the board look more finished than it is.
+The board views leave margin around the outline and include the fitted
+components, connectors, mounting holes and lens aperture.
 
 Usage (from the repository root):
     uv run hardware/tools/render_board.py [--no-refill]
 """
 
+import os
 import re
 import shutil
 import subprocess
@@ -39,17 +38,36 @@ IMG = HW.parent / "docs" / "img"
 TMP = HW.parent / "tmp"
 SHAPES = HW / "rpi-camera-led.3dshapes"
 
-KICAD_CLI = "/snap/bin/kicad.kicad-cli"
-# kicad-cli does not inherit the GUI's path substitutions, so the models
-# resolve to nothing unless this is handed to it explicitly.
-MODEL_DIR = "/snap/kicad/current/usr/share/kicad/3dmodels"
+from kicad_cli import KICAD_CLI
+
+
+def find_model_dir():
+    """Find KiCad's stock STEP library for CLI renders on any supported OS."""
+    candidates = [
+        os.environ.get("KICAD10_3DMODEL_DIR"),
+        os.environ.get("KICAD9_3DMODEL_DIR"),
+        str(Path(KICAD_CLI).resolve().parent.parent / "share" / "kicad" / "3dmodels"),
+        "/snap/kicad/current/usr/share/kicad/3dmodels",
+        "/usr/share/kicad/3dmodels",
+        "/Applications/KiCad/KiCad.app/Contents/SharedSupport/3dmodels",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "KiCad 3D model library not found; set KICAD9_3DMODEL_DIR or "
+        "KICAD10_3DMODEL_DIR"
+    )
+
+
+MODEL_DIR = find_model_dir()
 
 # The three README panels sit side by side, so they are given a common aspect
 # ratio: the SVG's page is whatever KiCad's "board area only" mode computes,
 # and the 3D renders are widened to match it.  Deriving the width instead of
 # hardcoding it keeps them matched if the board outline changes.
 HEIGHT = 1500
-ZOOM = "0.45"  # fits the off-board footprints too; see the note above
+ZOOM = "0.45"
 LAYERS = "F.Cu,B.Cu,F.SilkS,Edge.Cuts"
 
 # The cable stubs run 22mm out of each connector, so these views have to pull
@@ -78,8 +96,15 @@ def run(args, **kw):
 
 def refill_zones():
     """Bring the stored copper pours back in step with the board."""
-    r = subprocess.run([str(HW / "tools" / "run_in_kicad.sh"), "python3",
-                        str(HW / "tools" / "refill_zones.py")],
+    if os.name == "nt":
+        python = Path(KICAD_CLI).with_name("python.exe")
+        if not python.exists():
+            raise FileNotFoundError(f"KiCad Python not found beside {KICAD_CLI}")
+        command = [str(python), str(HW / "tools" / "refill_zones.py")]
+    else:
+        command = [str(HW / "tools" / "run_in_kicad.sh"), "python3",
+                   str(HW / "tools" / "refill_zones.py")]
+    r = subprocess.run(command,
                        capture_output=True, text=True)
     if r.returncode != 0:
         print("could not refill zones (rendering the stored fill instead):",
@@ -95,7 +120,9 @@ def render(out, extra, size, zoom, board):
     r = run([KICAD_CLI, "pcb", "render", "-o", str(out),
              "--width", str(w), "--height", str(h), "--quality", "high",
              "--background", "opaque", "--zoom", zoom,
-             "-D", f"KICAD9_3DMODEL_DIR={MODEL_DIR}", *extra, str(board)])
+             "-D", f"KICAD9_3DMODEL_DIR={MODEL_DIR}",
+             "-D", f"KICAD10_3DMODEL_DIR={MODEL_DIR}",
+             *extra, str(board)])
     print(f"{out.relative_to(HW.parent)}  "
           f"({out.stat().st_size // 1024} KiB, {w} x {h} px)")
     return r
